@@ -54,11 +54,9 @@ def keyboard_send_report() -> InlineKeyboardMarkup:
     :return:
     """
     logging.info("keyboard_send_report")
-    button_1 = InlineKeyboardButton(text=f'Добавить фото',
-                                    callback_data=f'send_report_photo')
-    button_2 = InlineKeyboardButton(text=f'Отправить отчет',
+    button_1 = InlineKeyboardButton(text=f'Отправить отчет',
                                     callback_data=f'send_report_continue')
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2]],)
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1]])
     return keyboard
 
 

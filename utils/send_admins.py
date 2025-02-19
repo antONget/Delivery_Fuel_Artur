@@ -23,7 +23,7 @@ async def send_message_admins_text(bot: Bot, text: str, keyboard: InlineKeyboard
             pass
 
 
-async def send_message_admins_photo(bot: Bot, list_ids: list, caption: str):
+async def send_message_admins_media_group(bot: Bot, list_ids: list, caption: str):
     """
     Рассылка медиагруппы администраторам
     :param bot:

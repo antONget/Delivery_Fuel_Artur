@@ -4,18 +4,15 @@ from aiogram.fsm.context import FSMContext
 from aiogram.filters import StateFilter
 from aiogram.fsm.state import State, StatesGroup
 
-import keyboards.user.keyboard_order as kb
-from keyboards.start_keyboard import keyboard_start
+import keyboards.partner.keyboard_order as kb
 import database.requests as rq
 from database.models import User
 from utils.error_handling import error_handler
-from utils.send_admins import send_message_admins_photo, send_message_admins_text
 from config_data.config import Config, load_config
 from filter.user_filter import IsRoleUser
-from datetime import datetime
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 
 config: Config = load_config()
 router = Router()
@@ -188,6 +185,9 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
     logging.info(f'process_not_del_personal_list: {callback.message.chat.id}')
     select = callback.data.split('_')[-1]
     if select == 'cancel':
+        data = await state.get_data()
+        await rq.set_order_status(order_id=data["order_id"],
+                                  status=rq.OrderStatus.cancel)
         list_users: list[User] = await rq.get_users_role(role=rq.UserRole.executor)
         if not list_users:
             await callback.message.answer(text=f'Нет ВОДИТЕЛЕЙ для назначения их на заказ. Добавьте водителей.')
@@ -202,15 +202,19 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
         data = await state.get_data()
         tg_id_executor = data['tg_id_executor']
         user_info = await rq.get_user_by_id(tg_id=tg_id_executor)
-        await callback.message.edit_text(text=f'Водитель <a href="tg://user?id={user_info.tg_id}">'
+        await callback.message.edit_text(text=f'Заказ № {data["order_id"]} создан.\n'
+                                              f'Водитель <a href="tg://user?id={user_info.tg_id}">'
                                               f'{user_info.username}</a> успешно назначен для доставки {data["volume_order"]} '
                                               f'литров топлива на адрес {data["address_order"]}')
         await rq.set_order_executor(order_id=data["order_id"],
                                     executor=user_info.tg_id)
         await rq.set_order_date_create(order_id=data["order_id"],
                                        date_create=datetime.now().strftime('%d.%m.%Y %H:%M'))
+        await rq.set_order_status(order_id=data["order_id"],
+                                  status=rq.OrderStatus.work)
         await bot.send_message(chat_id=tg_id_executor,
-                               text=f'Вы назначены для доставки {data["volume_order"]} '
+                               text=f'Заказ № {data["order_id"]}\n'
+                                    f'Вы назначены для доставки {data["volume_order"]} '
                                     f'литров топлива на адрес {data["address_order"]}\n'
                                     f'Пришлите фото оплаченной квитанции, для этого выберите заказ в разделе "ЗАКАЗ"')
     await callback.answer()

@@ -140,18 +140,16 @@ async def set_order_status(order_id: int, status: str) -> None:
             await session.commit()
 
 
-async def set_order_report(order_id: int, text_report: str, photo_ids_report: str) -> None:
+async def set_order_report(order_id: int, photo_ids_report: str) -> None:
     """
     Обновление отчета в заявке
     :param order_id:
-    :param text_report:
     :param photo_ids_report:
     :return:
     """
     logging.info('set_order_report')
     async with async_session() as session:
         order = await session.scalar(select(Order).where(Order.id == order_id))
-        order.text_report = text_report
         order.photo_ids_report = photo_ids_report
         order.status = OrderStatus.completed
         await session.commit()
