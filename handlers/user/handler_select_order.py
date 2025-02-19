@@ -289,6 +289,7 @@ async def pass_comment(callback: CallbackQuery, state: FSMContext, bot: Bot) -> 
     """
     logging.info(f'send_report: {callback.from_user.id} ')
     await state.set_state(state=None)
+    await callback.message.edit_text(text='Данные от вас получены и переданы')
     data = await state.get_data()
     order_id = data['order_id']
     info_order: Order = await rq.get_order_id(order_id=order_id)
@@ -306,3 +307,4 @@ async def pass_comment(callback: CallbackQuery, state: FSMContext, bot: Bot) -> 
                                         f'Адрес доставки: {info_order.address}\n'
                                         f'Количество топлива: {info_order.volume} литров.',
                                    keyboard=keyboard)
+    await callback.answer()
