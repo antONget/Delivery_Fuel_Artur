@@ -227,7 +227,7 @@ async def send_report(callback: CallbackQuery, state: FSMContext, bot: Bot) -> N
                                           caption=f'Отчет о выполнении заявки № {order_id} от  '
                                                   f'<a href="tg://user?id={info_order.executor}">ВОДИТЕЛЯ</a>'
                                                   f' получен')
-    if info_order.tg_id not in config.tg_bot.admin_ids.split(','):
+    if str(info_order.tg_id) not in config.tg_bot.admin_ids.split(','):
         await bot.send_photo(chat_id=info_order.tg_id,
                              photo=info_order.photo_ids_report,
                              caption=f'Отчет о выполнении заявки № {order_id} от  '

@@ -6,10 +6,11 @@ from aiogram.fsm.state import State, StatesGroup
 
 import keyboards.partner.keyboard_order as kb
 import database.requests as rq
-from database.models import User
+from database.models import User, Order
 from utils.error_handling import error_handler
 from config_data.config import Config, load_config
 from filter.user_filter import IsRoleUser
+from utils.send_admins import send_message_admins_text
 
 import logging
 from datetime import datetime
@@ -93,9 +94,20 @@ async def get_volume_order(message: Message, state: FSMContext, bot: Bot) -> Non
         keyboard = kb.keyboards_executor_personal(list_users=list_users,
                                                   back=0,
                                                   forward=2,
-                                                  count=6)
-        await message.answer(text=f'Выберите ВОДИТЕЛЯ, для назначения на заказ',
-                             reply_markup=keyboard)
+                                                  count=6,
+                                                  order_id=order_id)
+        if str(message.from_user.id) in config.tg_bot.admin_ids.split(','):
+            await message.answer(text=f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
+                                 reply_markup=keyboard)
+        else:
+            await message.answer(text=f'Заказ № {order_id} создан и передан администратору. '
+                                      f'О смене статуса заказа мы вас оповестим')
+            await send_message_admins_text(bot=bot,
+                                           text=f'Заказ № {order_id} создан партнером'
+                                                f' <a href="tg://user?id={message.from_user.id}">'
+                                                f'{message.from_user.username}</a>\n\n'
+                                                f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
+                                           keyboard=keyboard)
 
 
 @router.callback_query(F.data.startswith('executor_select_forward_'))
@@ -109,19 +121,20 @@ async def process_forward_executor(callback: CallbackQuery, state: FSMContext, b
     :return:
     """
     logging.info(f'process_forward_executor: {callback.message.chat.id}')
-    data = await state.get_data()
     list_users: list[User] = await rq.get_users_role(role=rq.UserRole.executor)
     forward = int(callback.data.split('_')[-1]) + 1
+    order_id = int(callback.data.split('_')[-2])
     back = forward - 2
     keyboard = kb.keyboards_executor_personal(list_users=list_users,
                                               back=back,
                                               forward=forward,
-                                              count=6)
+                                              count=6,
+                                              order_id=order_id)
     try:
-        await callback.message.edit_text(text=f'Выберите ВОДИТЕЛЯ, для назначения на заказ',
+        await callback.message.edit_text(text=f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
                                          reply_markup=keyboard)
     except:
-        await callback.message.edit_text(text=f'Выберитe ВОДИТЕЛЯ, для назначения на заказ',
+        await callback.message.edit_text(text=f'Выберитe ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
                                          reply_markup=keyboard)
 
 
@@ -138,16 +151,18 @@ async def process_back_executor(callback: CallbackQuery, state: FSMContext, bot:
     logging.info(f'process_back_executor: {callback.message.chat.id}')
     list_users = await rq.get_users_role(role=rq.UserRole.executor)
     back = int(callback.data.split('_')[3]) - 1
+    order_id = int(callback.data.split('_')[-2])
     forward = back + 2
     keyboard = kb.keyboards_executor_personal(list_users=list_users,
                                               back=back,
                                               forward=forward,
-                                              count=6)
+                                              count=6,
+                                              order_id=order_id)
     try:
-        await callback.message.edit_text(text=f'Выберите ВОДИТЕЛЯ, для назначения на заказ',
+        await callback.message.edit_text(text=f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
                                          reply_markup=keyboard)
     except:
-        await callback.message.edit_text(text=f'Выберитe ВОДИТЕЛЯ, для назначения на заказ',
+        await callback.message.edit_text(text=f'Выберитe ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
                                          reply_markup=keyboard)
 
 
@@ -163,12 +178,15 @@ async def process_delete_user(callback: CallbackQuery, state: FSMContext, bot: B
     """
     logging.info(f'process_delete_user: {callback.message.chat.id}')
     telegram_id = int(callback.data.split('_')[-1])
+    order_id = int(callback.data.split('_')[-2])
     await state.update_data(tg_id_executor=telegram_id)
-    user_info = await rq.get_user_by_id(tg_id=telegram_id)
-    data = await state.get_data()
-    await callback.message.edit_text(text=f'Водитель <a href="tg://user?id={user_info.tg_id}">'
-                                          f'{user_info.username}</a> назначен для доставки {data["volume_order"]} '
-                                          f'литров топлива на адрес {data["address_order"]}',
+    user_info: User = await rq.get_user_by_id(tg_id=telegram_id)
+    order_info: Order = await rq.get_order_id(order_id=order_id)
+    await state.update_data(order_id=order_id)
+    await callback.message.edit_text(text=f'Заказ  № {order_id}\n'
+                                          f'Водитель <a href="tg://user?id={user_info.tg_id}">'
+                                          f'{user_info.username}</a> назначен для доставки {order_info.volume} '
+                                          f'литров топлива на адрес {order_info.volume}',
                                      reply_markup=kb.keyboard_confirm_select_executor())
 
 
@@ -186,7 +204,8 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
     select = callback.data.split('_')[-1]
     if select == 'cancel':
         data = await state.get_data()
-        await rq.set_order_status(order_id=data["order_id"],
+        order_id = data["order_id"]
+        await rq.set_order_status(order_id=order_id,
                                   status=rq.OrderStatus.cancel)
         list_users: list[User] = await rq.get_users_role(role=rq.UserRole.executor)
         if not list_users:
@@ -195,26 +214,29 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
         keyboard = kb.keyboards_executor_personal(list_users=list_users,
                                                   back=0,
                                                   forward=2,
-                                                  count=6)
-        await callback.message.answer(text=f'Выберите ВОДИТЕЛЯ, для назначения на заказ',
+                                                  count=6,
+                                                  order_id=order_id)
+        await callback.message.answer(text=f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
                                       reply_markup=keyboard)
     else:
         data = await state.get_data()
+        order_id = data["order_id"]
         tg_id_executor = data['tg_id_executor']
         user_info = await rq.get_user_by_id(tg_id=tg_id_executor)
-        await callback.message.edit_text(text=f'Заказ № {data["order_id"]} создан.\n'
+        order_info: Order = await rq.get_order_id(order_id=order_id)
+        await callback.message.edit_text(text=f'Заказ № {order_id} создан.\n'
                                               f'Водитель <a href="tg://user?id={user_info.tg_id}">'
-                                              f'{user_info.username}</a> успешно назначен для доставки {data["volume_order"]} '
-                                              f'литров топлива на адрес {data["address_order"]}')
-        await rq.set_order_executor(order_id=data["order_id"],
+                                              f'{user_info.username}</a> успешно назначен для доставки {order_info.volume} '
+                                              f'литров топлива на адрес {order_info.address}')
+        await rq.set_order_executor(order_id=order_id,
                                     executor=user_info.tg_id)
-        await rq.set_order_date_create(order_id=data["order_id"],
+        await rq.set_order_date_create(order_id=order_id,
                                        date_create=datetime.now().strftime('%d.%m.%Y %H:%M'))
-        await rq.set_order_status(order_id=data["order_id"],
+        await rq.set_order_status(order_id=order_id,
                                   status=rq.OrderStatus.work)
         await bot.send_message(chat_id=tg_id_executor,
-                               text=f'Заказ № {data["order_id"]}\n'
-                                    f'Вы назначены для доставки {data["volume_order"]} '
-                                    f'литров топлива на адрес {data["address_order"]}\n'
+                               text=f'Заказ № {order_id}\n'
+                                    f'Вы назначены для доставки {order_info.volume} '
+                                    f'литров топлива на адрес {order_info.address}\n'
                                     f'Пришлите фото оплаченной квитанции, для этого выберите заказ в разделе "ЗАКАЗ"')
     await callback.answer()
