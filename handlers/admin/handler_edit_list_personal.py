@@ -52,7 +52,7 @@ async def process_select_action(callback: CallbackQuery, state: FSMContext, bot:
     :param bot:
     :return:
     """
-    logging.info(f'process_add_admin: {callback.message.chat.id}')
+    logging.info(f'process_add_admin: {callback.message.chat.id} {callback.data}' )
     edit_role = callback.data.split('_')[2]
     role = '<b>ПАРТНЕРА</b>'
     if edit_role == rq.UserRole.executor:
@@ -158,7 +158,7 @@ async def process_del_admin(callback: CallbackQuery, state: FSMContext, bot: Bot
     if edit_role == rq.UserRole.executor:
         role = '<b>ВОДИТЕЛЕЙ</b>'
         role_ = 'ВОДИТЕЛЕЙ'
-    list_users: list[User] = await rq.get_users_role(role=rq.UserRole.executor)
+    list_users: list[User] = await rq.get_users_role(role=edit_role)
     if not list_users:
         await callback.answer(text=f'Нет пользователей для удаления из списка {role_}', show_alert=True)
         return
@@ -187,7 +187,7 @@ async def process_forward_del_admin(callback: CallbackQuery, state: FSMContext, 
     role = '<b>ПАРТНЕРОВ</b>'
     if edit_role == rq.UserRole.executor:
         role = '<b>ВОДИТЕЛЕЙ</b>'
-    list_users: list[User] = await rq.get_users_role(role=rq.UserRole.executor)
+    list_users: list[User] = await rq.get_users_role(role=edit_role)
     forward = int(callback.data.split('_')[-1]) + 1
     back = forward - 2
     keyboard = kb.keyboards_del_personal(list_users=list_users,
@@ -218,7 +218,7 @@ async def process_back_del_admin(callback: CallbackQuery, state: FSMContext, bot
     role = '<b>ПАРТНЕРОВ</b>'
     if edit_role == rq.UserRole.executor:
         role = '<b>ВОДИТЕЛЕЙ</b>'
-    list_users = await rq.get_users_role(role=rq.UserRole.executor)
+    list_users = await rq.get_users_role(role=edit_role)
     back = int(callback.data.split('_')[3]) - 1
     forward = back + 2
     keyboard = kb.keyboards_del_personal(list_users=list_users,
