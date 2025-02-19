@@ -54,7 +54,14 @@ async def process_start_command_user(message: Message, state: FSMContext, bot: B
                      "username": username,
                      "role": role}
         await rq.add_user(data=data_user)
-
+    else:
+        if message.from_user.username:
+            username = message.from_user.username
+        else:
+            username = "user_name"
+        data_user = {"tg_id": message.from_user.id,
+                     "username": username}
+        await rq.add_user(data=data_user)
     # вывод клавиатуры в зависимости от роли пользователя
     user: User = await rq.get_user_by_id(tg_id=message.from_user.id)
     # пользователь

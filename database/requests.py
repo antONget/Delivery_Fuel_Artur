@@ -28,6 +28,9 @@ async def add_user(data: dict) -> None:
         if not user:
             session.add(User(**data))
             await session.commit()
+        else:
+            user.username = data['username']
+            await session.commit()
 
 
 async def set_user_role(tg_id: int, role: str) -> None:
@@ -181,4 +184,19 @@ async def set_order_date_solution(order_id: int, date_solution: str) -> None:
         order = await session.scalar(select(Order).where(Order.id == order_id))
         if order:
             order.date_solution = date_solution
+            await session.commit()
+
+
+async def set_order_date_create(order_id: int, date_create: str) -> None:
+    """
+    Добавление дату создания заявки
+    :param order_id:
+    :param date_create:
+    :return:
+    """
+    logging.info('set_order_date_create')
+    async with async_session() as session:
+        order = await session.scalar(select(Order).where(Order.id == order_id))
+        if order:
+            order.date_create = date_create
             await session.commit()

@@ -24,7 +24,8 @@ def keyboard_start(role: str) -> ReplyKeyboardMarkup:
                                        resize_keyboard=True)
     elif role == UserRole.executor:
         button_1 = KeyboardButton(text='Отчет')
-        keyboard = ReplyKeyboardMarkup(keyboard=[[button_1]],
+        button_2 = KeyboardButton(text='Заказ')
+        keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2]],
                                        resize_keyboard=True)
     return keyboard
 
