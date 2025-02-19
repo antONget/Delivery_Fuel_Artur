@@ -216,8 +216,8 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
                                                   forward=2,
                                                   count=6,
                                                   order_id=order_id)
-        await callback.message.answer(text=f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
-                                      reply_markup=keyboard)
+        await callback.message.edit_text(text=f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
+                                         reply_markup=keyboard)
     else:
         data = await state.get_data()
         order_id = data["order_id"]

@@ -5,6 +5,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import StateFilter, or_f
 from filter.user_filter import IsRoleExecutor, IsRoleAdmin
 from keyboards.user import keyboard_select_order as kb
+from keyboards.partner.keyboard_order import keyboards_executor_personal
 from utils.error_handling import error_handler
 from utils.send_admins import send_message_admins_text, send_message_admins_media_group
 
@@ -21,6 +22,7 @@ config: Config = load_config()
 class StateReport(StatesGroup):
     text_report_state = State()
     photo_report = State()
+    comment_cancel = State()
 
 
 # календарь
@@ -106,9 +108,16 @@ async def select_type_order(callback: CallbackQuery, state: FSMContext, bot: Bot
         await state.update_data(photo_report=[])
         await callback.message.edit_text(text=f'Пришлите фото квитанции по заказу №{order_id}',
                                          reply_markup=None)
-        await state.update_data(photo_report=[])
         await state.set_state(StateReport.photo_report)
         await callback.answer()
+        return
+    if type_select == 'cancel' and type_order == 'work':
+        order_id: str = callback.data.split('_')[-1]
+        await state.update_data(order_id=order_id)
+        await callback.message.edit_text(text=f'Вы отказались от выполнения заказа №{order_id},'
+                                              f' укажите причину или нажмите "ПРОПУСТИТЬ"',
+                                         reply_markup=kb.keyboard_pass_comment(order_id=order_id))
+        await state.set_state(StateReport.comment_cancel)
         return
 
     block = int(callback.data.split('_')[-1])
@@ -235,3 +244,65 @@ async def send_report(callback: CallbackQuery, state: FSMContext, bot: Bot) -> N
                                      f' получен')
     await callback.answer()
 
+
+@router.message(F.text, StateFilter(StateReport.comment_cancel))
+@error_handler
+async def get_comment_cancel(message: Message, state: FSMContext, bot: Bot) -> None:
+    """
+    Изменение данных
+    :param message:
+    :param state:
+    :param bot:
+    :return:
+    """
+    logging.info(f'get_comment_cancel: {message.chat.id}')
+    comment_cancel = message.text
+    await message.edit_text(text='Данные от вас получены и переданы')
+    data = await state.get_data()
+    order_id = data['order_id']
+    info_order: Order = await rq.get_order_id(order_id=order_id)
+    list_users: list[User] = await rq.get_users_role(role=rq.UserRole.executor)
+    keyboard = keyboards_executor_personal(list_users=list_users,
+                                           back=0,
+                                           forward=2,
+                                           count=6,
+                                           order_id=order_id)
+    await send_message_admins_text(bot=bot,
+                                   text=f'<a href="tg://user?id={info_order.executor}">ВОДИТЕЛЬ</a>'
+                                        f' отказался от выполнения заказа № {order_id},'
+                                        f' комментарий: {comment_cancel}\n'
+                                        f'Информация о заказе № {order_id}:\n'
+                                        f'Адрес доставки: {info_order.address}\n'
+                                        f'Количество топлива: {info_order.volume} литров.',
+                                   keyboard=keyboard)
+
+
+@router.callback_query(F.data == 'pass_comment')
+@error_handler
+async def pass_comment(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
+    """
+    Пропуск добавления комментраия
+    :param callback:
+    :param state:
+    :param bot:
+    :return:
+    """
+    logging.info(f'send_report: {callback.from_user.id} ')
+    await state.set_state(state=None)
+    data = await state.get_data()
+    order_id = data['order_id']
+    info_order: Order = await rq.get_order_id(order_id=order_id)
+    list_users: list[User] = await rq.get_users_role(role=rq.UserRole.executor)
+    keyboard = keyboards_executor_personal(list_users=list_users,
+                                           back=0,
+                                           forward=2,
+                                           count=6,
+                                           order_id=order_id)
+    await send_message_admins_text(bot=bot,
+                                   text=f'<a href="tg://user?id={info_order.executor}">ВОДИТЕЛЬ</a>'
+                                        f' отказался от выполнения заказа № {order_id},'
+                                        f' комментарий: отсутствует\n'
+                                        f'Информация о заказе № {order_id}:\n'
+                                        f'Адрес доставки: {info_order.address}\n'
+                                        f'Количество топлива: {info_order.volume} литров.',
+                                   keyboard=keyboard)
