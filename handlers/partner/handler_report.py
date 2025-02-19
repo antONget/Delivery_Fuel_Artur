@@ -6,7 +6,7 @@ from aiogram.filters import StateFilter, or_f
 from aiogram.filters.callback_data import CallbackData
 import aiogram_calendar
 from aiogram_calendar import get_user_locale
-from filter.user_filter import IsRoleExecutor, IsRoleAdmin
+from filter.user_filter import IsRoleUser
 from filter.admin_filter import IsSuperAdmin
 
 
@@ -25,10 +25,10 @@ class StateReport(StatesGroup):
 
 
 # календарь
-@router.message(F.text == 'Отчет', or_f(IsRoleExecutor(), IsRoleAdmin()))
+@router.message(F.text == 'Отчет', ~IsRoleUser())
 async def process_buttons_press_report(message: Message, state: FSMContext):
     """
-    Паздел отчет
+    Раздел отчет
     :param message:
     :param state:
     :return:
@@ -88,5 +88,8 @@ async def process_simple_calendar_finish(callback: CallbackQuery, callback_data:
     if selected:
         await state.update_data(finish_period=date_finish)
         await state.set_state(state=None)
-        await callback.message.answer(text='Статистика по категории заявки, уложился ли исполнитель в срок,'
-                                           ' оценка заявителя')
+        data = await state.get_data()
+        await callback.message.answer(text=f'В период {data["start_period"].strftime("%d.%m.%Y")} -'
+                                           f' {data["finish_period"].strftime("%d.%m.%Y")}\n\n'
+                                           f'Выполнено заказов: '
+                                           f'Доставлено топлива:')
