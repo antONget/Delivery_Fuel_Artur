@@ -1,7 +1,7 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton, ReplyKeyboardMarkup
 import logging
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from database.models import User
+from database.models import User, Order
 
 
 def keyboards_executor_personal(list_users: list[User], back: int,
@@ -63,4 +63,26 @@ def keyboard_confirm_select_executor() -> InlineKeyboardMarkup:
     button_2 = InlineKeyboardButton(text='Отменить',
                                     callback_data='appoint_cancel')
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2]])
+    return keyboard
+
+
+def keyboards_payer(list_orders: list[Order], block: int = 0) -> InlineKeyboardMarkup:
+    """
+    Список плательщиков
+    :param list_orders:
+    :param block:
+    :return:
+    """
+    logging.info(f'keyboards_payer')
+    button_select = InlineKeyboardButton(text='Выбрать',
+                                         callback_data=f'payer_select_{list_orders[block].id}')
+    button_back = InlineKeyboardButton(text='<<<<',
+                                       callback_data=f'payerlist_back_{block}')
+    button_count = InlineKeyboardButton(text=f'{block+1}{len(list_orders)}',
+                                        callback_data='none')
+    button_next = InlineKeyboardButton(text='>>>>',
+                                       callback_data=f'payerlist_next_{block}')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_select],
+                                                     [button_back, button_count, button_next]])
+
     return keyboard

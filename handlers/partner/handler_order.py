@@ -11,6 +11,7 @@ from utils.error_handling import error_handler
 from config_data.config import Config, load_config
 from filter.user_filter import IsRoleUser
 from utils.send_admins import send_message_admins_text
+from filter.admin_filter import check_super_admin
 
 import logging
 from datetime import datetime
@@ -20,9 +21,11 @@ router = Router()
 
 
 class OrderState(StatesGroup):
+    payer_order = State()
     address_order = State()
+    contact_order = State()
+    time_order = State()
     volume_order = State()
-    deadline = State()
 
 
 @router.message(F.text == 'Создать заказ', ~IsRoleUser())
@@ -36,8 +39,64 @@ async def press_button_order(message: Message, state: FSMContext, bot: Bot) -> N
     :return:
     """
     logging.info(f'press_button_order: {message.chat.id}')
-    await message.answer(text=f'Пришлите адрес доставки топлива')
-    await state.set_state(state=OrderState.address_order)
+    tg_id = message.from_user.id
+    if check_super_admin(message.from_user.id):
+        tg_id = None
+    list_orders = await rq.get_order_tg_id(tg_id=tg_id)
+    if list_orders:
+        await message.answer(text=f'Пришлите данные о <b>ПЛАТИЛЬЩИКЕ</b> заказа или выберите из ранее добавленных',
+                             reply_markup=kb.keyboards_payer(list_orders=list_orders,
+                                                             block=0))
+    else:
+        await message.answer(text=f'Пришлите данные о <b>ПЛАТИЛЬЩИКЕ</b> заказа')
+
+    # await state.set_state(state=OrderState.address_order)
+    # await message.answer(text=f'Пришлите адрес доставки топлива')
+    # await state.set_state(state=OrderState.address_order)
+
+
+@router.callback_query(F.data.startswith('payerlist_'))
+@error_handler
+async def process_forward_del_admin(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
+    """
+    Пагинация по списку пользователей вперед
+    :param callback:
+    :param state:
+    :param bot:
+    :return:
+    """
+    logging.info(f'process_forward_del_admin: {callback.message.chat.id}')
+    block = int(callback.data.split('_')[-1])
+    action = callback.data.split('_')[-2]
+    tg_id = callback.from_user.id
+    if check_super_admin(callback.from_user.id):
+        tg_id = None
+    list_orders = await rq.get_order_tg_id(tg_id=tg_id)
+    if action == 'next':
+        block += 1
+    else:
+        block -= 1
+    if block == len(list_orders):
+        block = 0
+    if block < 0:
+        block = len(list_orders) - 1
+    keyboard = kb.keyboards_payer(list_orders=list_orders,
+                                  block=block)
+    try:
+        await callback.message.edit_text(text=f'Пришлите данные о <b>ПЛАТИЛЬЩИКЕ</b>'
+                                              f' заказа или выберите из ранее добавленных',
+                                         reply_markup=keyboard)
+    except:
+        await callback.message.edit_text(text=f'Пришлитe данные о <b>ПЛАТИЛЬЩИКЕ</b>'
+                                              f' заказа или выберите из ранее добавленных',
+                                         reply_markup=keyboard)
+
+
+
+
+
+
+
 
 
 @router.message(F.text, StateFilter(OrderState.address_order))

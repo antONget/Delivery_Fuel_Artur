@@ -281,7 +281,7 @@ async def get_comment_cancel(message: Message, state: FSMContext, bot: Bot) -> N
 @error_handler
 async def pass_comment(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
     """
-    Пропуск добавления комментраия
+    Пропуск добавления комментария
     :param callback:
     :param state:
     :param bot:

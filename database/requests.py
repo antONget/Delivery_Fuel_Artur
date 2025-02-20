@@ -110,6 +110,21 @@ async def get_order_id(order_id: int) -> Order:
         return await session.scalar(select(Order).where(Order.id == order_id))
 
 
+async def get_order_tg_id(tg_id: int | None) -> list[Order]:
+    """
+    Получаем заявки партнера
+    :param tg_id:
+    :return:
+    """
+    logging.info('get_order_tg_id')
+    async with async_session() as session:
+        if tg_id:
+            list_orders = await session.scalars(select(Order))
+        else:
+            list_orders = await session.scalars(select(Order).where(Order.tg_id == tg_id))
+        return [order for order in list_orders]
+
+
 async def get_orders_tg_id_status(tg_id_executor: int, status: str) -> list[Order]:
     """
     Получаем заявки по его tg_id и заданному статусу

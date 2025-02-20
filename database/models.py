@@ -24,6 +24,7 @@ class Order(Base):
     __tablename__ = 'orders'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     tg_id: Mapped[int] = mapped_column(BigInteger)
+    payer: Mapped[str] = mapped_column(String)
     address: Mapped[str] = mapped_column(String)
     volume: Mapped[str] = mapped_column(String)
     status: Mapped[str] = mapped_column(String)
