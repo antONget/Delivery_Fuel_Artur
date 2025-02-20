@@ -18,14 +18,14 @@ async def check_role(tg_id: int, role: str) -> bool:
 
 class IsRoleAdmin(BaseFilter):
     async def __call__(self, message: Message) -> bool:
-        return await check_role(tg_id=message.chat.id, role=rq.UserRole.admin)
+        return await check_role(tg_id=message.from_user.id, role=rq.UserRole.admin)
 
 
 class IsRoleExecutor(BaseFilter):
     async def __call__(self, message: Message) -> bool:
-        return await check_role(tg_id=message.chat.id, role=rq.UserRole.executor)
+        return await check_role(tg_id=message.from_user.id, role=rq.UserRole.executor)
 
 
 class IsRoleUser(BaseFilter):
     async def __call__(self, message: Message) -> bool:
-        return await check_role(tg_id=message.chat.id, role=rq.UserRole.user)
+        return await check_role(tg_id=message.from_user.id, role=rq.UserRole.user)

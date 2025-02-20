@@ -1,8 +1,8 @@
 from database.models import User, Order, async_session, Token
-from sqlalchemy import select, or_, and_
+from sqlalchemy import select, or_, and_, distinct
 import logging
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, date
 
 
 """ USER """
@@ -119,10 +119,16 @@ async def get_order_tg_id(tg_id: int | None) -> list[Order]:
     logging.info('get_order_tg_id')
     async with async_session() as session:
         if tg_id:
-            list_orders = await session.scalars(select(Order))
-        else:
             list_orders = await session.scalars(select(Order).where(Order.tg_id == tg_id))
-        return [order for order in list_orders]
+        else:
+            list_orders = await session.scalars(select(Order))
+        list_uniq_order = []
+        temp = []
+        for order in list_orders:
+            if order.payer not in temp:
+                list_uniq_order.append(order)
+                temp.append(order.payer)
+        return list_uniq_order
 
 
 async def get_orders_tg_id_status(tg_id_executor: int, status: str) -> list[Order]:
@@ -138,6 +144,31 @@ async def get_orders_tg_id_status(tg_id_executor: int, status: str) -> list[Orde
                                                            Order.status == status))
         list_order = [order for order in orders]
         return list_order
+
+
+async def get_order_report(tg_id: int, data_1: datetime, data_2: datetime) -> (int, int):
+    logging.info('get_order_report')
+    async with async_session() as session:
+        user = await get_user_by_id(tg_id)
+        if user.role == UserRole.executor:
+            orders = await session.scalars(select(Order).filter(Order.executor == tg_id,
+                                                                Order.date_solution != ''))
+        elif user.role == UserRole.partner:
+            orders = await session.scalars(select(Order).filter(Order.tg_id == tg_id,
+                                                               Order.date_solution != ''))
+        else:
+            orders = await session.scalars(select(Order).where(Order.date_solution != ''))
+        quantity = 0
+        volume = 0
+        for order in orders:
+            data_str = order.date_solution.split(' ')[0]
+            order_data = datetime(year=int(data_str.split('-')[-1]),
+                                  month=int(data_str.split('-')[-2]),
+                                  day=int(data_str.split('-')[-3]))
+            if data_1 <= order_data <= data_2:
+                quantity += 1
+                volume += order.volume
+        return quantity, volume
 
 
 async def set_order_status(order_id: int, status: str) -> None:

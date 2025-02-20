@@ -21,11 +21,11 @@ router = Router()
 
 
 class OrderState(StatesGroup):
-    payer_order = State()
-    address_order = State()
-    contact_order = State()
-    time_order = State()
-    volume_order = State()
+    payer_state = State()
+    address_state = State()
+    contact_state = State()
+    time_state = State()
+    volume_state = State()
 
 
 @router.message(F.text == 'Создать заказ', ~IsRoleUser())
@@ -40,19 +40,17 @@ async def press_button_order(message: Message, state: FSMContext, bot: Bot) -> N
     """
     logging.info(f'press_button_order: {message.chat.id}')
     tg_id = message.from_user.id
-    if check_super_admin(message.from_user.id):
+    if await check_super_admin(message.from_user.id):
         tg_id = None
     list_orders = await rq.get_order_tg_id(tg_id=tg_id)
     if list_orders:
-        await message.answer(text=f'Пришлите данные о <b>ПЛАТИЛЬЩИКЕ</b> заказа или выберите из ранее добавленных',
+        await message.answer(text=f'Пришлите данные о <b>ПЛАТЕЛЬЩИКЕ</b> заказа или выберите из ранее добавленных\n\n'
+                                  f'{list_orders[0].payer}',
                              reply_markup=kb.keyboards_payer(list_orders=list_orders,
                                                              block=0))
     else:
-        await message.answer(text=f'Пришлите данные о <b>ПЛАТИЛЬЩИКЕ</b> заказа')
-
-    # await state.set_state(state=OrderState.address_order)
-    # await message.answer(text=f'Пришлите адрес доставки топлива')
-    # await state.set_state(state=OrderState.address_order)
+        await message.answer(text=f'Пришлите данные о <b>ПЛАТЕЛЬЩИКЕ</b> заказа')
+    await state.set_state(OrderState.payer_state)
 
 
 @router.callback_query(F.data.startswith('payerlist_'))
@@ -69,7 +67,7 @@ async def process_forward_del_admin(callback: CallbackQuery, state: FSMContext, 
     block = int(callback.data.split('_')[-1])
     action = callback.data.split('_')[-2]
     tg_id = callback.from_user.id
-    if check_super_admin(callback.from_user.id):
+    if await check_super_admin(callback.from_user.id):
         tg_id = None
     list_orders = await rq.get_order_tg_id(tg_id=tg_id)
     if action == 'next':
@@ -84,22 +82,53 @@ async def process_forward_del_admin(callback: CallbackQuery, state: FSMContext, 
                                   block=block)
     try:
         await callback.message.edit_text(text=f'Пришлите данные о <b>ПЛАТИЛЬЩИКЕ</b>'
-                                              f' заказа или выберите из ранее добавленных',
+                                              f' заказа или выберите из ранее добавленных\n\n'
+                                              f'{list_orders[block].payer}',
                                          reply_markup=keyboard)
     except:
         await callback.message.edit_text(text=f'Пришлитe данные о <b>ПЛАТИЛЬЩИКЕ</b>'
-                                              f' заказа или выберите из ранее добавленных',
+                                              f' заказа или выберите из ранее добавленных\n\n'
+                                              f'{list_orders[block].payer}',
                                          reply_markup=keyboard)
 
 
+@router.callback_query(F.data.startswith('select_payer'))
+@error_handler
+async def payerlist_select(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    """
+    Выбор плательщика
+    :param callback:
+    :param state:
+    :param bot:
+    :return:
+    """
+    logging.info(f'payerlist_select: {callback.message.chat.id}')
+    order_id = callback.data.split('_')[-1]
+    info_order = await rq.get_order_id(int(order_id))
+    payer_order = info_order.payer
+    await state.update_data(payer_order=payer_order)
+    await callback.message.edit_text(text=f'Пришлите адрес, на который требуется доставить топливо')
+    await state.set_state(OrderState.address_state)
 
 
+@router.message(F.text, StateFilter(OrderState.payer_state))
+@error_handler
+async def get_payer(message: Message, state: FSMContext, bot: Bot) -> None:
+    """
+    Получаем данные плательщика
+    :param message:
+    :param state:
+    :param bot:
+    :return:
+    """
+    logging.info(f'get_address_order: {message.chat.id}')
+    payer_order = message.text
+    await state.update_data(payer_order=payer_order)
+    await message.answer(text=f'Пришлите адрес, на который требуется доставить топливо')
+    await state.set_state(OrderState.address_state)
 
 
-
-
-
-@router.message(F.text, StateFilter(OrderState.address_order))
+@router.message(F.text, StateFilter(OrderState.address_state))
 @error_handler
 async def get_address_order(message: Message, state: FSMContext, bot: Bot) -> None:
     """
@@ -110,16 +139,47 @@ async def get_address_order(message: Message, state: FSMContext, bot: Bot) -> No
     :return:
     """
     logging.info(f'get_address_order: {message.chat.id}')
-    if message.text:
-        address_order = message.text
-        await state.update_data(address_order=address_order)
-        await message.answer(text=f'Пришлите количество топлива для доставки на адрес: <b>{address_order}</b>')
-        await state.set_state(OrderState.volume_order)
-    else:
-        await message.answer(text=f'Пришлите адрес доставки топлива')
+    address_order = message.text
+    await state.update_data(address_order=address_order)
+    await message.answer(text=f'Пришлите данные контактного лица на адресе доставки')
+    await state.set_state(OrderState.contact_state)
 
 
-@router.message(F.text, StateFilter(OrderState.volume_order))
+@router.message(F.text, StateFilter(OrderState.contact_state))
+@error_handler
+async def get_contact_order(message: Message, state: FSMContext, bot: Bot) -> None:
+    """
+    Получаем данные контактного лица
+    :param message:
+    :param state:
+    :param bot:
+    :return:
+    """
+    logging.info(f'get_contact_order: {message.chat.id}')
+    contact_order = message.text
+    await state.update_data(contact_order=contact_order)
+    await message.answer(text=f'Пришлите желаемую дату и время доставки')
+    await state.set_state(OrderState.time_state)
+
+
+@router.message(F.text, StateFilter(OrderState.time_state))
+@error_handler
+async def get_time_order(message: Message, state: FSMContext, bot: Bot) -> None:
+    """
+    Получаем время доставки
+    :param message:
+    :param state:
+    :param bot:
+    :return:
+    """
+    logging.info(f'get_time_order: {message.chat.id}')
+    time_order = message.text
+    await state.update_data(time_order=time_order)
+    await message.answer(text=f'Пришлите количество топлива')
+    await state.set_state(OrderState.volume_state)
+
+
+@router.message(F.text, StateFilter(OrderState.volume_state))
 @error_handler
 async def get_volume_order(message: Message, state: FSMContext, bot: Bot) -> None:
     """
@@ -135,6 +195,7 @@ async def get_volume_order(message: Message, state: FSMContext, bot: Bot) -> Non
     elif int(message.text) <= 0:
         await message.answer(text='Некорректно указано количество топлива, значение должно быть целым числом > 0')
     else:
+        await state.set_state(state=None)
         volume_order = message.text
         await state.update_data(volume_order=volume_order)
 
@@ -144,7 +205,10 @@ async def get_volume_order(message: Message, state: FSMContext, bot: Bot) -> Non
             return
         data = await state.get_data()
         order_data = {"tg_id": message.from_user.id,
+                      "payer": data['payer_order'],
                       "address": data['address_order'],
+                      "contact": data['contact_order'],
+                      "time": data['time_order'],
                       "volume": data["volume_order"],
                       "status": rq.OrderStatus.create,
                       "date_create": datetime.now().strftime('%d.%m.%Y %H:%M')}
@@ -283,10 +347,23 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
         tg_id_executor = data['tg_id_executor']
         user_info = await rq.get_user_by_id(tg_id=tg_id_executor)
         order_info: Order = await rq.get_order_id(order_id=order_id)
-        await callback.message.edit_text(text=f'Заказ № {order_id} создан.\n'
+        await callback.message.edit_text(text=f'Заказ № {order_id} создан.\n\n'
+                                              f'Плательщик: <i>{order_info.payer}</i>\n'
+                                              f'Адрес: <i>{order_info.address}</i>\n'
+                                              f'Контактное лицо: <i>{order_info.contact}</i>\n'
+                                              f'Время доставки: <i>{order_info.time}</i>\n'
+                                              f'Количество топлива: <i>{order_info.volume} литров</i>\n'
                                               f'Водитель <a href="tg://user?id={user_info.tg_id}">'
-                                              f'{user_info.username}</a> успешно назначен для доставки {order_info.volume} '
-                                              f'литров топлива на адрес {order_info.address}')
+                                              f'{user_info.username}</a>')
+        await bot.send_message(chat_id=order_info.tg_id,
+                               text=f'Заказ № {order_id} создан.\n\n'
+                                    f'Плательщик: <i>{order_info.payer}</i>\n'
+                                    f'Адрес: <i>{order_info.address}</i>\n'
+                                    f'Контактное лицо: <i>{order_info.contact}</i>\n'
+                                    f'Время доставки: <i>{order_info.time}</i>\n'
+                                    f'Количество топлива: <i>{order_info.volume} литров</i>\n'  
+                                    f'Водитель <a href="tg://user?id={user_info.tg_id}">'
+                                    f'{user_info.username}</a>')
         await rq.set_order_executor(order_id=order_id,
                                     executor=user_info.tg_id)
         await rq.set_order_date_create(order_id=order_id,
@@ -295,7 +372,10 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
                                   status=rq.OrderStatus.work)
         await bot.send_message(chat_id=tg_id_executor,
                                text=f'Заказ № {order_id}\n'
-                                    f'Вы назначены для доставки {order_info.volume} '
-                                    f'литров топлива на адрес {order_info.address}\n'
+                                    f'Плательщик: <i>{order_info.payer}</i>\n'
+                                    f'Адрес: <i>{order_info.address}</i>\n'
+                                    f'Контактное лицо: <i>{order_info.contact}</i>\n'
+                                    f'Время доставки: <i>{order_info.time}</i>\n'
+                                    f'Количество топлива: <i>{order_info.volume} литров</i>\n'  
                                     f'Пришлите фото оплаченной квитанции, для этого выберите заказ в разделе "ЗАКАЗ"')
     await callback.answer()

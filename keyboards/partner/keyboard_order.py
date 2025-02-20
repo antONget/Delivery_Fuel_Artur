@@ -75,10 +75,10 @@ def keyboards_payer(list_orders: list[Order], block: int = 0) -> InlineKeyboardM
     """
     logging.info(f'keyboards_payer')
     button_select = InlineKeyboardButton(text='Выбрать',
-                                         callback_data=f'payer_select_{list_orders[block].id}')
+                                         callback_data=f'select_payer_{list_orders[block].id}')
     button_back = InlineKeyboardButton(text='<<<<',
                                        callback_data=f'payerlist_back_{block}')
-    button_count = InlineKeyboardButton(text=f'{block+1}{len(list_orders)}',
+    button_count = InlineKeyboardButton(text=f'{block+1}/{len(list_orders)}',
                                         callback_data='none')
     button_next = InlineKeyboardButton(text='>>>>',
                                        callback_data=f'payerlist_next_{block}')

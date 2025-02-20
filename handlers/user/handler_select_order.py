@@ -59,9 +59,12 @@ async def select_type_order(callback: CallbackQuery, state: FSMContext, bot: Bot
         if orders:
             info_user: User = await rq.get_user_by_id(tg_id=orders[0].tg_id)
             order = f'<b>Заявка №{orders[0].id}</b>\n' \
-                    f'Админ: <a href="tg://user?id={info_user.tg_id}">{info_user.username}</a>\n' \
-                    f'Адрес: {orders[0].address}\n' \
-                    f'Количество топлива: {orders[0].volume} литров\n'
+                    f'Заказчик: <a href="tg://user?id={info_user.tg_id}">{info_user.username}</a>\n' \
+                    f'Плательщик: <i>{orders[0].payer}</i>\n' \
+                    f'Адрес: <i>{orders[0].address}</i>\n' \
+                    f'Контактное лицо: <i>{orders[0].contact}</i>\n' \
+                    f'Время доставки: <i>{orders[0].time}</i>\n' \
+                    f'Количество топлива: <i>{orders[0].volume} литров</i>\n'
             await callback.message.edit_text(text=f'{order}',
                                              reply_markup=kb.keyboards_select_item_one(list_item=orders,
                                                                                        block=0,
@@ -74,9 +77,12 @@ async def select_type_order(callback: CallbackQuery, state: FSMContext, bot: Bot
         if orders:
             info_user: User = await rq.get_user_by_id(tg_id=orders[0].tg_id)
             order = f'<b>Заявка №{orders[0].id}</b>\n' \
-                    f'Админ: <a href="tg://user?id={info_user.tg_id}">{info_user.username}</a>\n' \
-                    f'Адрес: {orders[0].address}\n' \
-                    f'Количество топлива: {orders[0].volume} литров\n'
+                    f'Заказчик: <a href="tg://user?id={info_user.tg_id}">{info_user.username}</a>\n' \
+                    f'Плательщик: <i>{orders[0].payer}</i>\n' \
+                    f'Адрес: <i>{orders[0].address}</i>\n' \
+                    f'Контактное лицо: <i>{orders[0].contact}</i>\n' \
+                    f'Время доставки: <i>{orders[0].time}</i>\n' \
+                    f'Количество топлива: <i>{orders[0].volume} литров</i>\n'
             photo_order = orders[0].photo_ids_report
             await callback.message.answer_photo(photo=photo_order,
                                                 caption=f'{order}',
@@ -137,9 +143,12 @@ async def select_type_order(callback: CallbackQuery, state: FSMContext, bot: Bot
                 block = count_item - 1
             info_user: User = await rq.get_user_by_id(tg_id=orders[block].tg_id)
             order = f'<b>Заявка №{orders[block].id}</b>\n' \
-                    f'Админ: <a href="tg://user?id={info_user.tg_id}">{info_user.username}</a>\n' \
-                    f'Адрес: {orders[block].address}\n' \
-                    f'Количество топлива: {orders[block].volume} литров'
+                    f'Заказчик: <a href="tg://user?id={info_user.tg_id}">{info_user.username}</a>\n' \
+                    f'Плательщик: <i>{orders[block].payer}</i>\n' \
+                    f'Адрес: <i>{orders[block].address}</i>\n' \
+                    f'Контактное лицо: <i>{orders[block].contact}</i>\n' \
+                    f'Время доставки: <i>{orders[block].time}</i>\n' \
+                    f'Количество топлива: <i>{orders[block].volume} литров</i>\n'
             try:
                 await callback.message.edit_text(text=f'{order}',
                                                  reply_markup=kb.keyboards_select_item_one(list_item=orders,
@@ -163,9 +172,12 @@ async def select_type_order(callback: CallbackQuery, state: FSMContext, bot: Bot
                 block = count_item - 1
             info_user: User = await rq.get_user_by_id(tg_id=orders[block].tg_id)
             order = f'<b>Заявка №{orders[block].id}</b>\n' \
-                    f'Админ: <a href="tg://user?id={info_user.tg_id}">{info_user.username}</a>\n' \
-                    f'Адрес: {orders[block].address}\n' \
-                    f'Количество топлива: {orders[block].volume} литров'
+                    f'Заказчик: <a href="tg://user?id={info_user.tg_id}">{info_user.username}</a>\n' \
+                    f'Плательщик: <i>{orders[block].payer}</i>\n' \
+                    f'Адрес: <i>{orders[block].address}</i>\n' \
+                    f'Контактное лицо: <i>{orders[block].contact}</i>\n' \
+                    f'Время доставки: <i>{orders[block].time}</i>\n' \
+                    f'Количество топлива: <i>{orders[block].volume} литров</i>\n'
             photo_order = orders[block].photo_ids_report
             try:
                 await callback.message.edit_media(media=InputMediaPhoto(media=photo_order,
@@ -257,7 +269,7 @@ async def get_comment_cancel(message: Message, state: FSMContext, bot: Bot) -> N
     """
     logging.info(f'get_comment_cancel: {message.chat.id}')
     comment_cancel = message.text
-    await message.edit_text(text='Данные от вас получены и переданы')
+    await message.answer(text='Данные от вас получены и переданы')
     data = await state.get_data()
     order_id = data['order_id']
     info_order: Order = await rq.get_order_id(order_id=order_id)
@@ -272,8 +284,11 @@ async def get_comment_cancel(message: Message, state: FSMContext, bot: Bot) -> N
                                         f' отказался от выполнения заказа № {order_id},'
                                         f' комментарий: {comment_cancel}\n'
                                         f'Информация о заказе № {order_id}:\n'
-                                        f'Адрес доставки: {info_order.address}\n'
-                                        f'Количество топлива: {info_order.volume} литров.',
+                                        f'Плательщик: <i>{info_order.payer}</i>\n'
+                                        f'Адрес: <i>{info_order.address}</i>\n'
+                                        f'Контактное лицо: <i>{info_order.contact}</i>\n'
+                                        f'Время доставки: <i>{info_order.time}</i>\n'
+                                        f'Количество топлива: <i>{info_order.volume} литров</i>\n',
                                    keyboard=keyboard)
 
 
@@ -304,7 +319,10 @@ async def pass_comment(callback: CallbackQuery, state: FSMContext, bot: Bot) -> 
                                         f' отказался от выполнения заказа № {order_id},'
                                         f' комментарий: отсутствует\n'
                                         f'Информация о заказе № {order_id}:\n'
-                                        f'Адрес доставки: {info_order.address}\n'
-                                        f'Количество топлива: {info_order.volume} литров.',
+                                        f'Плательщик: <i>{info_order.payer}</i>\n'
+                                        f'Адрес: <i>{info_order.address}</i>\n'
+                                        f'Контактное лицо: <i>{info_order.contact}</i>\n'
+                                        f'Время доставки: <i>{info_order.time}</i>\n'
+                                        f'Количество топлива: <i>{info_order.volume} литров</i>\n',
                                    keyboard=keyboard)
     await callback.answer()

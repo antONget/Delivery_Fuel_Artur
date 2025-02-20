@@ -6,14 +6,14 @@ from aiogram.filters import StateFilter, or_f
 from aiogram.filters.callback_data import CallbackData
 import aiogram_calendar
 from aiogram_calendar import get_user_locale
-from filter.user_filter import IsRoleUser
+from filter.user_filter import IsRoleAdmin, IsRoleExecutor, IsRoleUser
 from filter.admin_filter import IsSuperAdmin
 
 
 from datetime import datetime, timedelta, date
 from filter.admin_filter import check_super_admin
 from database import requests as rq
-from database.models import Order
+from database.models import Order, User
 import logging
 
 router = Router()
@@ -93,3 +93,11 @@ async def process_simple_calendar_finish(callback: CallbackQuery, callback_data:
                                            f' {data["finish_period"].strftime("%d.%m.%Y")}\n\n'
                                            f'Выполнено заказов: '
                                            f'Доставлено топлива:')
+        # info_user: User = await rq.get_user_by_id(tg_id=callback.from_user.id)
+        quantity, volume = await rq.get_order_report(tg_id=callback.from_user.id,
+                                                     data_1=data["start_period"],
+                                                     data_2=data["finish_period"])
+        await callback.message.answer(text=f'В период {data["start_period"].strftime("%d.%m.%Y")} -'
+                                           f' {data["finish_period"].strftime("%d.%m.%Y")}\n\n'
+                                           f'Выполнено заказов: {quantity}\n'
+                                           f'Доставлено топлива: {volume}')

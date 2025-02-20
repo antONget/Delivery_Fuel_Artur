@@ -46,7 +46,7 @@ async def main():
     dp.include_router(start_handler.router)
     dp.include_routers(handler_edit_list_personal.router)
     dp.include_router(handler_select_order.router)
-    dp.include_routers(handler_order.router)
+    dp.include_routers(handler_order.router, handler_report.router)
     dp.include_router(other_handlers.router)
 
     # Пропускаем накопившиеся update и запускаем polling
