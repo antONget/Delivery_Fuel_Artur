@@ -1,5 +1,5 @@
 from aiogram import Router, F, Bot
-from aiogram.filters import CommandStart, StateFilter, or_f
+from aiogram.filters import CommandStart, StateFilter, or_f, CommandObject
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove, PreCheckoutQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -28,17 +28,18 @@ class PersonalData(StatesGroup):
 @router.message(CommandStart())
 @router.message(F.text == 'Главное меню')
 @error_handler
-async def process_start_command_user(message: Message, state: FSMContext, bot: Bot) -> None:
+async def process_start_command_user(message: Message, state: FSMContext, command: CommandObject, bot: Bot) -> None:
     """
     Обработки запуска бота или ввода команды /start
     :param message:
     :param state:
+    :param command:
     :param bot:
     :return:
     """
     logging.info(f'process_start_command_user: {message.chat.id}')
     await state.set_state(state=None)
-
+    token = command.args
     # добавление пользователя в БД если еще его там нет
     user: User = await rq.get_user_by_id(tg_id=message.from_user.id)
     if not user:
@@ -46,10 +47,9 @@ async def process_start_command_user(message: Message, state: FSMContext, bot: B
             username = message.from_user.username
         else:
             username = "user_name"
+        role = rq.UserRole.user
         if await check_super_admin(telegram_id=message.from_user.id):
             role = rq.UserRole.admin
-        else:
-            role = rq.UserRole.user
         data_user = {"tg_id": message.from_user.id,
                      "username": username,
                      "role": role}
@@ -62,6 +62,13 @@ async def process_start_command_user(message: Message, state: FSMContext, bot: B
         data_user = {"tg_id": message.from_user.id,
                      "username": username}
         await rq.add_user(data=data_user)
+    if token:
+        role = await rq.get_token(token=token, tg_id=message.from_user.id)
+        if role:
+            await rq.set_user_role(tg_id=message.from_user.id,
+                                   role=role)
+        else:
+            await message.answer(text='Пригласительная ссылка не валидна')
     # вывод клавиатуры в зависимости от роли пользователя
     user: User = await rq.get_user_by_id(tg_id=message.from_user.id)
     # пользователь

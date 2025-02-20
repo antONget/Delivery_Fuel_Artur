@@ -1,23 +1,25 @@
 from aiogram import F, Router, Bot
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.state import State, StatesGroup, default_state
 from aiogram.filters import StateFilter
 
 import keyboards.admin.keyboards_edit_list_personal as kb
+from keyboards.start_keyboard import keyboard_start
 import database.requests as rq
 from database.models import User
 from filter.admin_filter import IsSuperAdmin
 from utils.error_handling import error_handler
+from config_data.config import Config, load_config
 
-
+from uuid import uuid4
 import asyncio
 import logging
 
 
 router = Router()
-
+config: Config = load_config()
 
 class Personal(StatesGroup):
     id_tg_personal = State()
@@ -74,70 +76,91 @@ async def process_personal_add(callback: CallbackQuery, state: FSMContext, bot: 
     :return:
     """
     logging.info(f'process_personal_add: {callback.message.chat.id}')
+    rand_token = str(uuid4())
     data = await state.get_data()
-    edit_role = data["edit_role"]
-    role = '<b>ПАРТНЕРОМ</b>'
-    if edit_role == rq.UserRole.executor:
-        role = '<b>ВОДИТЕЛЕМ</b>'
-    await callback.message.edit_text(text=f'Пришлите id telegram пользователя для назначения его {role}.\n\n'
-                                          f'Важно!!! Пользователь должен запустить бота.\n\n'
-                                          f'Получить id telegram пользователя можно при помощи бота: '
-                                          f'@getmyid_bot или @username_to_id_bot',
-                                     reply_markup=None)
-    await state.set_state(Personal.id_tg_personal)
-
-
-@router.message(F.text, StateFilter(Personal.id_tg_personal))
-@error_handler
-async def get_id_tg_personal(message: Message, state: FSMContext, bot: Bot):
-    """
-    Получаем id телеграм для добавления в список выбранной роли
-    :param message:
-    :param state:
-    :param bot:
-    :return:
-    """
-    if message.text in ['Персонал', 'Создать заказ', 'Отчет']:
-        await message.answer(text='Изменение списка ПЕРСОНАЛА прервано')
-        await state.set_state(state=None)
-        return
-    if message.text.isdigit():
-        tg_id_personal = int(message.text)
-    else:
-        await message.answer(text='id пользователя должно состоять только из цифр, например 6632926430')
-        return
-    data = await state.get_data()
-    edit_role = data["edit_role"]
+    edit_role = data['edit_role']
     role = '<b>ПАРТНЕРОВ</b>'
-    role_1 = '<b>ПАРТНЕРОМ</b>'
-    role_2 = '<b>ПАРТНЕРА</b>'
     if edit_role == rq.UserRole.executor:
         role = '<b>ВОДИТЕЛЕЙ</b>'
-        role_1 = '<b>ВОДИТЕЛЕМ</b>'
-        role_2 = '<b>ВОДИТЕЛЯ</b>'
-    user: User = await rq.get_user_by_id(tg_id=tg_id_personal)
-    if user:
-        await rq.set_user_role(tg_id=tg_id_personal, role=edit_role)
-        await message.answer(text=f'Пользователь <a href="tg://user?id={user.tg_id}">{user.username}</a>'
-                                  f' добавлен в список {role}')
-        try:
-            await bot.send_message(chat_id=tg_id_personal,
-                                   text=f'Вы назначены {role_1} в проекте,'
-                                        f' при необходимости перезапустите бота /start')
-        except:
-            await message.answer(text=f'Пользователь c id={tg_id_personal} еще не запускал бот,'
-                                      f'после запуска бота у него будет доступен функционал {role_2}')
-        await state.set_state(state=None)
-    else:
-        data_user = {"tg_id": int(message.text),
-                     "username": "username",
-                     "role": edit_role}
-        await rq.add_user(data=data_user)
-        await message.answer(text=f'<a href="tg://user?id={message.text}">Пользователь </a>'
-                                  f' добавлен в список {role}\n\n'
-                                  f'Пользователь c id={tg_id_personal} еще не запускал бот, '
-                                  f'после запуска бота у него будет доступен функционал {role_2}')
-    await state.set_state(state=None)
+    token_data = {"token": rand_token,
+                  "role": edit_role}
+    await rq.add_token(data=token_data)
+    await callback.message.edit_text(text=f'Для добавления пользователя в список {role}, '
+                                          f'отправьте ему пригласительную ссылку:\n'
+                                          f'<code>https://t.me/{config.tg_bot.link_bot}?start={rand_token}'
+                                          f'</code>')
+    await callback.answer()
+#     return
+#
+#
+#
+#
+#
+#     data = await state.get_data()
+#     edit_role = data["edit_role"]
+#     role = '<b>ПАРТНЕРОМ</b>'
+#     if edit_role == rq.UserRole.executor:
+#         role = '<b>ВОДИТЕЛЕМ</b>'
+#     await callback.message.edit_text(text=f'Пришлите id telegram пользователя для назначения его {role}.\n\n'
+#                                           f'Важно!!! Пользователь должен запустить бота.\n\n'
+#                                           f'Получить id telegram пользователя можно при помощи бота: '
+#                                           f'@getmyid_bot или @username_to_id_bot',
+#                                      reply_markup=None)
+#     await state.set_state(Personal.id_tg_personal)
+#
+#
+# @router.message(F.text, StateFilter(Personal.id_tg_personal))
+# @error_handler
+# async def get_id_tg_personal(message: Message, state: FSMContext, bot: Bot):
+#     """
+#     Получаем id телеграм для добавления в список выбранной роли
+#     :param message:
+#     :param state:
+#     :param bot:
+#     :return:
+#     """
+#     if message.text in ['Персонал', 'Создать заказ', 'Отчет']:
+#         await message.answer(text='Изменение списка ПЕРСОНАЛА прервано')
+#         await state.set_state(state=None)
+#         return
+#     if message.text.isdigit():
+#         tg_id_personal = int(message.text)
+#     else:
+#         await message.answer(text='id пользователя должно состоять только из цифр, например 6632926430')
+#         return
+#     data = await state.get_data()
+#     edit_role = data["edit_role"]
+#     role = '<b>ПАРТНЕРОВ</b>'
+#     role_1 = '<b>ПАРТНЕРОМ</b>'
+#     role_2 = '<b>ПАРТНЕРА</b>'
+#     if edit_role == rq.UserRole.executor:
+#         role = '<b>ВОДИТЕЛЕЙ</b>'
+#         role_1 = '<b>ВОДИТЕЛЕМ</b>'
+#         role_2 = '<b>ВОДИТЕЛЯ</b>'
+#     user: User = await rq.get_user_by_id(tg_id=tg_id_personal)
+#     if user:
+#         await rq.set_user_role(tg_id=tg_id_personal, role=edit_role)
+#         await message.answer(text=f'Пользователь <a href="tg://user?id={user.tg_id}">{user.username}</a>'
+#                                   f' добавлен в список {role}')
+#         try:
+#             await bot.send_message(chat_id=tg_id_personal,
+#                                    text=f'Вы назначены {role_1} в проекте,'
+#                                         f' при необходимости перезапустите бота /start',
+#                                    reply_markup=keyboard_start(role=edit_role))
+#         except:
+#             await message.answer(text=f'Пользователь c id={tg_id_personal} еще не запускал бот,'
+#                                       f'после запуска бота у него будет доступен функционал {role_2}')
+#         await state.set_state(state=None)
+#     else:
+#         data_user = {"tg_id": int(message.text),
+#                      "username": "username",
+#                      "role": edit_role}
+#         await rq.add_user(data=data_user)
+#         await message.answer(text=f'<a href="tg://user?id={message.text}">Пользователь </a>'
+#                                   f' добавлен в список {role}\n\n'
+#                                   f'Пользователь c id={tg_id_personal} еще не запускал бот, '
+#                                   f'после запуска бота у него будет доступен функционал {role_2}')
+#     await state.set_state(state=None)
 
 
 @router.callback_query(F.data == 'personal_delete')
@@ -287,5 +310,8 @@ async def process_del_personal_list(callback: CallbackQuery, state: FSMContext, 
         role = 'ВОДИТЕЛЕЙ'
     await rq.set_user_role(tg_id=tg_id, role=rq.UserRole.user)
     await callback.answer(text=f'Пользователь успешно удален из {role}', show_alert=True)
+    await bot.send_message(chat_id=tg_id,
+                           text=f'Вы удалены из списка {role}',
+                           reply_markup=ReplyKeyboardRemove())
     await asyncio.sleep(1)
     await process_change_list_personal(message=callback.message, bot=bot)

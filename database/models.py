@@ -34,6 +34,14 @@ class Order(Base):
     photo_ids_report: Mapped[str] = mapped_column(String, default='')
 
 
+class Token(Base):
+    __tablename__ = 'token'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    token: Mapped[str] = mapped_column(String)
+    role: Mapped[str] = mapped_column(String)
+    tg_id: Mapped[int] = mapped_column(BigInteger, default=0)
+
+
 async def async_main():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
