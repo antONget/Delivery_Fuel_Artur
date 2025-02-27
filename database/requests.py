@@ -155,7 +155,7 @@ async def get_order_report(tg_id: int, data_1: datetime, data_2: datetime) -> (i
                                                                 Order.date_solution != ''))
         elif user.role == UserRole.partner:
             orders = await session.scalars(select(Order).filter(Order.tg_id == tg_id,
-                                                               Order.date_solution != ''))
+                                                                Order.date_solution != ''))
         else:
             orders = await session.scalars(select(Order).where(Order.date_solution != ''))
         quantity = 0
@@ -169,6 +169,25 @@ async def get_order_report(tg_id: int, data_1: datetime, data_2: datetime) -> (i
                 quantity += 1
                 volume += order.volume
         return quantity, volume
+
+
+async def get_order_report_admin(data_1: datetime, data_2: datetime) -> (int, int, list):
+    logging.info('get_order_report')
+    async with async_session() as session:
+        orders = await session.scalars(select(Order).filter(Order.date_solution != ''))
+        quantity = 0
+        volume = 0
+        orders_list = []
+        for order in orders:
+            data_str = order.date_solution.split(' ')[0]
+            order_data = datetime(year=int(data_str.split('-')[-1]),
+                                  month=int(data_str.split('-')[-2]),
+                                  day=int(data_str.split('-')[-3]))
+            if data_1 <= order_data <= data_2:
+                quantity += 1
+                volume += order.volume
+                orders_list.append(order)
+        return quantity, volume, orders_list
 
 
 async def set_order_status(order_id: int, status: str) -> None:
@@ -186,11 +205,12 @@ async def set_order_status(order_id: int, status: str) -> None:
             await session.commit()
 
 
-async def set_order_report(order_id: int, photo_ids_report: str) -> None:
+async def set_order_report(order_id: int, photo_ids_report: str, text_order: str) -> None:
     """
     Обновление отчета в заявке
     :param order_id:
     :param photo_ids_report:
+    :param text_order:
     :return:
     """
     logging.info('set_order_report')
@@ -198,6 +218,7 @@ async def set_order_report(order_id: int, photo_ids_report: str) -> None:
         order = await session.scalar(select(Order).where(Order.id == order_id))
         order.photo_ids_report = photo_ids_report
         order.status = OrderStatus.completed
+        order.text_report = text_order
         await session.commit()
 
 

@@ -11,7 +11,7 @@ from utils.error_handling import error_handler
 from config_data.config import Config, load_config
 from filter.user_filter import IsRoleUser
 from utils.send_admins import send_message_admins_text
-from filter.admin_filter import check_super_admin
+from filter.user_filter import check_role
 
 import logging
 from datetime import datetime
@@ -40,16 +40,17 @@ async def press_button_order(message: Message, state: FSMContext, bot: Bot) -> N
     """
     logging.info(f'press_button_order: {message.chat.id}')
     tg_id = message.from_user.id
-    if await check_super_admin(message.from_user.id):
+    if await check_role(tg_id=message.from_user.id, role=rq.UserRole.admin):
         tg_id = None
     list_orders = await rq.get_order_tg_id(tg_id=tg_id)
     if list_orders:
-        await message.answer(text=f'Пришлите данные о <b>ПЛАТЕЛЬЩИКЕ</b> заказа или выберите из ранее добавленных\n\n'
+        await message.answer(text=f'Пришлите  инн и название <b>ПЛАТЕЛЬЩИКА</b> заказа'
+                                  f' или выберите из ранее добавленных\n\n'
                                   f'{list_orders[0].payer}',
                              reply_markup=kb.keyboards_payer(list_orders=list_orders,
                                                              block=0))
     else:
-        await message.answer(text=f'Пришлите данные о <b>ПЛАТЕЛЬЩИКЕ</b> заказа')
+        await message.answer(text=f'Пришлите инн и название <b>ПЛАТЕЛЬЩИКА</b> заказа')
     await state.set_state(OrderState.payer_state)
 
 
@@ -67,7 +68,7 @@ async def process_forward_del_admin(callback: CallbackQuery, state: FSMContext, 
     block = int(callback.data.split('_')[-1])
     action = callback.data.split('_')[-2]
     tg_id = callback.from_user.id
-    if await check_super_admin(callback.from_user.id):
+    if await check_role(tg_id=callback.from_user.id, role=rq.UserRole.admin):
         tg_id = None
     list_orders = await rq.get_order_tg_id(tg_id=tg_id)
     if action == 'next':
@@ -81,12 +82,12 @@ async def process_forward_del_admin(callback: CallbackQuery, state: FSMContext, 
     keyboard = kb.keyboards_payer(list_orders=list_orders,
                                   block=block)
     try:
-        await callback.message.edit_text(text=f'Пришлите данные о <b>ПЛАТИЛЬЩИКЕ</b>'
+        await callback.message.edit_text(text=f'Пришлите инн и название <b>ПЛАТИЛЬЩИКА</b>'
                                               f' заказа или выберите из ранее добавленных\n\n'
                                               f'{list_orders[block].payer}',
                                          reply_markup=keyboard)
     except:
-        await callback.message.edit_text(text=f'Пришлитe данные о <b>ПЛАТИЛЬЩИКЕ</b>'
+        await callback.message.edit_text(text=f'Пришлитe инн и название <b>ПЛАТИЛЬЩИКА</b>'
                                               f' заказа или выберите из ранее добавленных\n\n'
                                               f'{list_orders[block].payer}',
                                          reply_markup=keyboard)

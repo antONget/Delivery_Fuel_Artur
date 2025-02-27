@@ -1,21 +1,27 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-
+from database.requests import UserRole
 from database.models import User
+from filter.admin_filter import check_super_admin
 import logging
 
 
-def keyboard_select_role() -> InlineKeyboardMarkup:
+async def keyboard_select_role(tg_id: int) -> InlineKeyboardMarkup:
     """
     Клавиатура для выбора роли для редактирования
     :return:
     """
     logging.info('keyboard_select_role')
     button_1 = InlineKeyboardButton(text='Партнер',
-                                    callback_data='edit_list_partner')
+                                    callback_data=f'edit_list_{UserRole.partner}')
     button_2 = InlineKeyboardButton(text='Водитель',
-                                    callback_data='edit_list_executor')
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2]])
+                                    callback_data=f'edit_list_{UserRole.partner}')
+    button_3 = InlineKeyboardButton(text='Администратор',
+                                    callback_data=f'edit_list_{UserRole.admin}')
+    if await check_super_admin(telegram_id=tg_id):
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2], [button_3]])
+    else:
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2]])
     return keyboard
 
 

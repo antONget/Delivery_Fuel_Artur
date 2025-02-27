@@ -3,13 +3,14 @@ from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.state import State, StatesGroup, default_state
-from aiogram.filters import StateFilter
+from aiogram.filters import StateFilter, or_f
 
 import keyboards.admin.keyboards_edit_list_personal as kb
 from keyboards.start_keyboard import keyboard_start
 import database.requests as rq
 from database.models import User
 from filter.admin_filter import IsSuperAdmin
+from filter.user_filter import IsRoleAdmin
 from utils.error_handling import error_handler
 from config_data.config import Config, load_config
 
@@ -26,7 +27,7 @@ class Personal(StatesGroup):
 
 
 # Персонал
-@router.message(F.text == 'Персонал', IsSuperAdmin())
+@router.message(F.text == 'Персонал', or_f(IsSuperAdmin(), IsRoleAdmin()))
 @error_handler
 async def process_change_list_personal(message: Message, bot: Bot) -> None:
     """
@@ -38,10 +39,10 @@ async def process_change_list_personal(message: Message, bot: Bot) -> None:
     logging.info(f'process_change_list_personal: {message.chat.id}')
     try:
         await message.edit_text(text="Выберите роль которую вы хотите изменить.",
-                                reply_markup=kb.keyboard_select_role())
+                                reply_markup=await kb.keyboard_select_role(tg_id=message.from_user.id))
     except:
         await message.answer(text="Выбeрите роль которую вы хотите изменить.",
-                             reply_markup=kb.keyboard_select_role())
+                             reply_markup=await kb.keyboard_select_role(tg_id=message.from_user.id))
 
 
 @router.callback_query(F.data.startswith('edit_list_'))

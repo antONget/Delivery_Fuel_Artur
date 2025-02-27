@@ -63,6 +63,7 @@ async def process_start_command_user(message: Message, state: FSMContext, comman
                      "username": username}
         await rq.add_user(data=data_user)
     if token:
+        print(token)
         role = await rq.get_token(token=token, tg_id=message.from_user.id)
         if role:
             await rq.set_user_role(tg_id=message.from_user.id,
