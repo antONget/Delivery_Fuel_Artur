@@ -230,6 +230,11 @@ async def get_volume_order(message: Message, state: FSMContext, bot: Bot) -> Non
                                            text=f'Заказ № {order_id} создан партнером'
                                                 f' <a href="tg://user?id={message.from_user.id}">'
                                                 f'{message.from_user.username}</a>\n\n'
+                                                f'Плательщик: <i>{data["payer_order"]}</i>\n'
+                                                f'Адрес: <i>{data["address_order"]}</i>\n'
+                                                f'Контактное лицо: <i>{data["contact_order"]}</i>\n'
+                                                f'Время доставки: <i>{data["time_order"]}</i>\n'
+                                                f'Количество топлива: <i>{data["volume_order"]} литров</i>\n'  
                                                 f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
                                            keyboard=keyboard)
 
