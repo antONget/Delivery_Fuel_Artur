@@ -15,7 +15,7 @@ async def keyboard_select_role(tg_id: int) -> InlineKeyboardMarkup:
     button_1 = InlineKeyboardButton(text='Партнер',
                                     callback_data=f'edit_list_{UserRole.partner}')
     button_2 = InlineKeyboardButton(text='Водитель',
-                                    callback_data=f'edit_list_{UserRole.partner}')
+                                    callback_data=f'edit_list_{UserRole.executor}')
     button_3 = InlineKeyboardButton(text='Администратор',
                                     callback_data=f'edit_list_{UserRole.admin}')
     if await check_super_admin(telegram_id=tg_id):
