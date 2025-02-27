@@ -155,8 +155,8 @@ async def report_general(callback: CallbackQuery, state: FSMContext, bot: Bot):
                                             reply_markup=keyboards_report_item_one(list_item=orders,
                                                                                    block=0))
     else:
-        await callback.message.edit_text(text=f'В период {data["start_period"].strftime("%d.%m.%Y")} - '
-                                              f'{data["finish_period"].strftime("%d.%m.%Y")} нет отчетов')
+        await callback.message.answer(text=f'В период {data["start_period"].strftime("%d.%m.%Y")} - '
+                                           f'{data["finish_period"].strftime("%d.%m.%Y")} нет отчетов')
 
 
 @router.callback_query(F.data.startswith('itemreport_'))
