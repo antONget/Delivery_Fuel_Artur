@@ -140,19 +140,23 @@ async def report_general(callback: CallbackQuery, state: FSMContext, bot: Bot):
     data = await state.get_data()
     quantity_total, volume_total, orders = await rq.get_order_report_admin(data_1=data["start_period"],
                                                                            data_2=data["finish_period"])
-    info_user: User = await rq.get_user_by_id(tg_id=orders[0].tg_id)
-    order = f'<b>Заявка №{orders[0].id}</b>\n' \
-            f'Заказчик: <a href="tg://user?id={info_user.tg_id}">{info_user.username}</a>\n' \
-            f'Плательщик: <i>{orders[0].payer}</i>\n' \
-            f'Адрес: <i>{orders[0].address}</i>\n' \
-            f'Контактное лицо: <i>{orders[0].contact}</i>\n' \
-            f'Время доставки: <i>{orders[0].time}</i>\n' \
-            f'Количество топлива: <i>{orders[0].volume} литров</i>\n'
-    photo_order = orders[0].photo_ids_report
-    await callback.message.answer_photo(photo=photo_order,
-                                        caption=f'{order}',
-                                        reply_markup=keyboards_report_item_one(list_item=orders,
-                                                                               block=0))
+    if len(orders):
+        info_user: User = await rq.get_user_by_id(tg_id=orders[0].tg_id)
+        order = f'<b>Заявка №{orders[0].id}</b>\n' \
+                f'Заказчик: <a href="tg://user?id={info_user.tg_id}">{info_user.username}</a>\n' \
+                f'Плательщик: <i>{orders[0].payer}</i>\n' \
+                f'Адрес: <i>{orders[0].address}</i>\n' \
+                f'Контактное лицо: <i>{orders[0].contact}</i>\n' \
+                f'Время доставки: <i>{orders[0].time}</i>\n' \
+                f'Количество топлива: <i>{orders[0].volume} литров</i>\n'
+        photo_order = orders[0].photo_ids_report
+        await callback.message.answer_photo(photo=photo_order,
+                                            caption=f'{order}',
+                                            reply_markup=keyboards_report_item_one(list_item=orders,
+                                                                                   block=0))
+    else:
+        await callback.message.edit_text(text=f'В период {data["start_period"].strftime("%d.%m.%Y")} - '
+                                              f'{data["finish_period"].strftime("%d.%m.%Y")} нет отчетов')
 
 
 @router.callback_query(F.data.startswith('itemreport_'))
