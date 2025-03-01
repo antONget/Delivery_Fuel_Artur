@@ -60,6 +60,8 @@ async def process_select_action(callback: CallbackQuery, state: FSMContext, bot:
     role = '<b>ПАРТНЕРА</b>'
     if edit_role == rq.UserRole.executor:
         role = '<b>ВОДИТЕЛЯ</b>'
+    elif edit_role == rq.UserRole.admin:
+        role = '<b>АДМИНИСТРАТОРА</b>'
     await state.update_data(edit_role=edit_role)
     await callback.message.edit_text(text=f"Назначить или разжаловать пользователя как {role}?",
                                      reply_markup=kb.keyboard_select_action())
@@ -83,6 +85,8 @@ async def process_personal_add(callback: CallbackQuery, state: FSMContext, bot: 
     role = '<b>ПАРТНЕРОВ</b>'
     if edit_role == rq.UserRole.executor:
         role = '<b>ВОДИТЕЛЕЙ</b>'
+    elif edit_role == rq.UserRole.admin:
+        role = '<b>АДМИНИСТРАТОРА</b>'
     token_data = {"token": rand_token,
                   "role": edit_role}
     await rq.add_token(data=token_data)
@@ -182,6 +186,9 @@ async def process_del_admin(callback: CallbackQuery, state: FSMContext, bot: Bot
     if edit_role == rq.UserRole.executor:
         role = '<b>ВОДИТЕЛЕЙ</b>'
         role_ = 'ВОДИТЕЛЕЙ'
+    elif edit_role == rq.UserRole.admin:
+        role = '<b>АДМИНИСТРАТОРОВ</b>'
+        role_ = 'АДМИНИСТРАТОРОВ'
     list_users: list[User] = await rq.get_users_role(role=edit_role)
     if not list_users:
         await callback.answer(text=f'Нет пользователей для удаления из списка {role_}', show_alert=True)
@@ -211,6 +218,8 @@ async def process_forward_del_admin(callback: CallbackQuery, state: FSMContext, 
     role = '<b>ПАРТНЕРОВ</b>'
     if edit_role == rq.UserRole.executor:
         role = '<b>ВОДИТЕЛЕЙ</b>'
+    elif edit_role == rq.UserRole.admin:
+        role = '<b>АДМИНИСТРАТОРОВ</b>'
     list_users: list[User] = await rq.get_users_role(role=edit_role)
     forward = int(callback.data.split('_')[-1]) + 1
     back = forward - 2
@@ -242,6 +251,8 @@ async def process_back_del_admin(callback: CallbackQuery, state: FSMContext, bot
     role = '<b>ПАРТНЕРОВ</b>'
     if edit_role == rq.UserRole.executor:
         role = '<b>ВОДИТЕЛЕЙ</b>'
+    elif edit_role == rq.UserRole.admin:
+        role = '<b>АДМИНИСТРАТОРОВ</b>'
     list_users = await rq.get_users_role(role=edit_role)
     back = int(callback.data.split('_')[3]) - 1
     forward = back + 2
@@ -273,6 +284,8 @@ async def process_delete_user(callback: CallbackQuery, state: FSMContext, bot: B
     role = '<b>ПАРТНЕРОВ</b>'
     if edit_role == rq.UserRole.executor:
         role = '<b>ВОДИТЕЛЕЙ</b>'
+    elif edit_role == rq.UserRole.admin:
+        role = '<b>АДМИНИСТРАТОРОВ</b>'
     telegram_id = int(callback.data.split('_')[-1])
     user_info = await rq.get_user_by_id(tg_id=telegram_id)
     await state.update_data(del_personal=telegram_id)
@@ -309,6 +322,8 @@ async def process_del_personal_list(callback: CallbackQuery, state: FSMContext, 
     role = 'ПАРТНЕРОВ'
     if edit_role == rq.UserRole.executor:
         role = 'ВОДИТЕЛЕЙ'
+    elif edit_role == rq.UserRole.admin:
+        role = '<b>АДМИНИСТРАТОРОВ</b>'
     await rq.set_user_role(tg_id=tg_id, role=rq.UserRole.user)
     await callback.answer(text=f'Пользователь успешно удален из {role}', show_alert=True)
     await bot.send_message(chat_id=tg_id,

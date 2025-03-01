@@ -226,17 +226,19 @@ async def get_volume_order(message: Message, state: FSMContext, bot: Bot) -> Non
         else:
             await message.answer(text=f'Заказ № {order_id} создан и передан администратору. '
                                       f'О смене статуса заказа мы вас оповестим')
-            await send_message_admins_text(bot=bot,
-                                           text=f'Заказ № {order_id} создан партнером'
-                                                f' <a href="tg://user?id={message.from_user.id}">'
-                                                f'{message.from_user.username}</a>\n\n'
-                                                f'Плательщик: <i>{data["payer_order"]}</i>\n'
-                                                f'Адрес: <i>{data["address_order"]}</i>\n'
-                                                f'Контактное лицо: <i>{data["contact_order"]}</i>\n'
-                                                f'Время доставки: <i>{data["time_order"]}</i>\n'
-                                                f'Количество топлива: <i>{data["volume_order"]} литров</i>\n'  
-                                                f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
-                                           keyboard=keyboard)
+            admins: list[User] = await rq.get_users_role(role=rq.UserRole.admin)
+            for chat_id in admins:
+                await bot.send_message(chat_id=chat_id.tg_id,
+                                       text=f'Заказ № {order_id} создан партнером'
+                                            f' <a href="tg://user?id={message.from_user.id}">'
+                                            f'{message.from_user.username}</a>\n\n'
+                                            f'Плательщик: <i>{data["payer_order"]}</i>\n'
+                                            f'Адрес: <i>{data["address_order"]}</i>\n'
+                                            f'Контактное лицо: <i>{data["contact_order"]}</i>\n'
+                                            f'Время доставки: <i>{data["time_order"]}</i>\n'
+                                            f'Количество топлива: <i>{data["volume_order"]} литров</i>\n'  
+                                            f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
+                                       reply_markup=keyboard)
 
 
 @router.callback_query(F.data.startswith('executor_select_forward_'))
