@@ -22,6 +22,7 @@ config: Config = load_config()
 class StateReport(StatesGroup):
     text_report = State()
     photo_report = State()
+    photo_counter = State()
     comment_cancel = State()
 
 
@@ -196,6 +197,7 @@ async def select_type_order(callback: CallbackQuery, state: FSMContext, bot: Bot
 
 @router.message(F.text, StateFilter(StateReport.text_report))
 @router.message(F.photo, StateFilter(StateReport.photo_report))
+@router.message(F.photo, StateFilter(StateReport.photo_counter))
 @error_handler
 async def get_text_order(message: Message, state: FSMContext, bot: Bot) -> None:
     """
@@ -217,9 +219,16 @@ async def get_text_order(message: Message, state: FSMContext, bot: Bot) -> None:
             await message.answer(text=f'Количество топлива указанно не корректно',
                                  reply_markup=None)
     elif message.photo:
-        photo_id = message.photo[-1].file_id
-        await state.update_data(photo_report=photo_id)
         data = await state.get_data()
+        photo_id = message.photo[-1].file_id
+        state_ = await state.get_state()
+        if state_ == StateReport.photo_counter:
+            await send_message_admins_media_group(bot=bot,
+                                                  list_ids=[photo_id],
+                                                  caption=f'Показания счетчика по заказу № {data["order_id"]} от  '
+                                                          f'<a href="tg://user?id={message.from_user.id}">ВОДИТЕЛЯ</a>')
+            return
+        await state.update_data(photo_report=photo_id)
         await message.answer_photo(photo=photo_id,
                                    caption=f'{data["text_report"]}\n\n'
                                            f'Ваши материалы получены можете переснять фото или отправить отчет по'
@@ -242,7 +251,8 @@ async def send_report(callback: CallbackQuery, state: FSMContext, bot: Bot) -> N
     await state.set_state(state=None)
     await callback.message.delete()
     await callback.message.answer(text='Ваш отчет направлен администратору')
-
+    await callback.message.answer(text='Отправьте фотографию счетчика топлива')
+    await state.set_state(state=StateReport.photo_counter)
     data = await state.get_data()
     order_id = data['order_id']
     current_date = datetime.now().strftime('%d-%m-%Y %H:%M')
