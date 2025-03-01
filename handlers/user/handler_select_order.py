@@ -227,6 +227,7 @@ async def get_text_order(message: Message, state: FSMContext, bot: Bot) -> None:
                                                   list_ids=[photo_id],
                                                   caption=f'Показания счетчика по заказу № {data["order_id"]} от  '
                                                           f'<a href="tg://user?id={message.from_user.id}">ВОДИТЕЛЯ</a>')
+            await message.answer(text='Показания счетчика направлены администратору')
             return
         await state.update_data(photo_report=photo_id)
         await message.answer_photo(photo=photo_id,
