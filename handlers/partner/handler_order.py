@@ -261,11 +261,28 @@ async def process_forward_executor(callback: CallbackQuery, state: FSMContext, b
                                               forward=forward,
                                               count=6,
                                               order_id=order_id)
+    data = await state.get_data()
     try:
-        await callback.message.edit_text(text=f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
+        await callback.message.edit_text(text=f'Заказ № {order_id} создан партнером'
+                                              f' <a href="tg://user?id={callback.from_user.id}">'
+                                              f'{callback.from_user.username}</a>\n\n'
+                                              f'Плательщик: <i>{data["payer_order"]}</i>\n'
+                                              f'Адрес: <i>{data["address_order"]}</i>\n'
+                                              f'Контактное лицо: <i>{data["contact_order"]}</i>\n'
+                                              f'Время доставки: <i>{data["time_order"]}</i>\n'
+                                              f'Количество топлива: <i>{data["volume_order"]} литров</i>\n'  
+                                              f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
                                          reply_markup=keyboard)
     except:
-        await callback.message.edit_text(text=f'Выберитe ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
+        await callback.message.edit_text(text=f'Заказ № {order_id} создан партнером'
+                                              f' <a href="tg://user?id={callback.from_user.id}">'
+                                              f'{callback.from_user.username}</a>\n\n'
+                                              f'Плательщик: <i>{data["payer_order"]}</i>\n'
+                                              f'Адрес: <i>{data["address_order"]}</i>\n'
+                                              f'Контактное лицо: <i>{data["contact_order"]}</i>\n'
+                                              f'Время доставки: <i>{data["time_order"]}</i>\n'
+                                              f'Количество топлива: <i>{data["volume_order"]} литров</i>\n'  
+                                              f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}.',
                                          reply_markup=keyboard)
 
 
@@ -289,11 +306,28 @@ async def process_back_executor(callback: CallbackQuery, state: FSMContext, bot:
                                               forward=forward,
                                               count=6,
                                               order_id=order_id)
+    data = await state.get_data()
     try:
-        await callback.message.edit_text(text=f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
+        await callback.message.edit_text(text=f'Заказ № {order_id} создан партнером'
+                                              f' <a href="tg://user?id={callback.from_user.id}">'
+                                              f'{callback.from_user.username}</a>\n\n'
+                                              f'Плательщик: <i>{data["payer_order"]}</i>\n'
+                                              f'Адрес: <i>{data["address_order"]}</i>\n'
+                                              f'Контактное лицо: <i>{data["contact_order"]}</i>\n'
+                                              f'Время доставки: <i>{data["time_order"]}</i>\n'
+                                              f'Количество топлива: <i>{data["volume_order"]} литров</i>\n'  
+                                              f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
                                          reply_markup=keyboard)
     except:
-        await callback.message.edit_text(text=f'Выберитe ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
+        await callback.message.edit_text(text=f'Заказ № {order_id} создан партнером'
+                                              f' <a href="tg://user?id={callback.from_user.id}">'
+                                              f'{callback.from_user.username}</a>\n\n'
+                                              f'Плательщик: <i>{data["payer_order"]}</i>\n'
+                                              f'Адрес: <i>{data["address_order"]}</i>\n'
+                                              f'Контактное лицо: <i>{data["contact_order"]}</i>\n'
+                                              f'Время доставки: <i>{data["time_order"]}</i>\n'
+                                              f'Количество топлива: <i>{data["volume_order"]} литров</i>\n'  
+                                              f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}.',
                                          reply_markup=keyboard)
 
 
