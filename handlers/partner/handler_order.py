@@ -351,7 +351,7 @@ async def process_delete_user(callback: CallbackQuery, state: FSMContext, bot: B
     await callback.message.edit_text(text=f'Заказ  № {order_id}\n'
                                           f'Водитель <a href="tg://user?id={user_info.tg_id}">'
                                           f'{user_info.username}</a> назначен для доставки {order_info.volume} '
-                                          f'литров топлива на адрес {order_info.volume}',
+                                          f'литров топлива на адрес {order_info.address}',
                                      reply_markup=kb.keyboard_confirm_select_executor())
 
 
