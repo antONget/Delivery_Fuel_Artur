@@ -4,6 +4,26 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from database.models import User, Order
 
 
+def keyboard_action_order() -> InlineKeyboardMarkup:
+    """
+    Клавиатура для выбора действия с заказом
+    :return:
+    """
+    logging.info('keyboard_action_order')
+    button_1 = InlineKeyboardButton(text='Создать',
+                                    callback_data='new_order')
+    button_2 = InlineKeyboardButton(text='Повторить',
+                                    callback_data='repeat_order')
+    button_3 = InlineKeyboardButton(text='Удалить',
+                                    callback_data='delete_order')
+    button_4 = InlineKeyboardButton(text='Редактировать',
+                                    callback_data='edit_order')
+    button_5 = InlineKeyboardButton(text='Изменить реквизиты заказа',
+                                    callback_data='change_order')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1, button_2], [button_3, button_4], [button_5]])
+    return keyboard
+
+
 def keyboards_executor_personal(list_users: list[User], back: int,
                                 forward: int, count: int, order_id: int) -> InlineKeyboardMarkup:
     """
@@ -16,6 +36,7 @@ def keyboards_executor_personal(list_users: list[User], back: int,
     :return:
     """
     logging.info(f'keyboards_executor_personal')
+    print(back, forward)
     # проверка чтобы не ушли в минус
     if back < 0:
         back = 0
@@ -84,5 +105,70 @@ def keyboards_payer(list_orders: list[Order], block: int = 0) -> InlineKeyboardM
                                        callback_data=f'payerlist_next_{block}')
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_select],
                                                      [button_back, button_count, button_next]])
+
+    return keyboard
+
+
+def keyboards_inn(list_orders: list[Order], block: int = 0) -> InlineKeyboardMarkup:
+    """
+    Список плательщиков
+    :param list_orders:
+    :param block:
+    :return:
+    """
+    logging.info(f'keyboards_payer')
+    button_select = InlineKeyboardButton(text='Выбрать',
+                                         callback_data=f'select_inn_{list_orders[block].id}')
+    button_back = InlineKeyboardButton(text='<<<<',
+                                       callback_data=f'innlist_back_{block}')
+    button_count = InlineKeyboardButton(text=f'{block+1}/{len(list_orders)}',
+                                        callback_data='none')
+    button_next = InlineKeyboardButton(text='>>>>',
+                                       callback_data=f'innlist_next_{block}')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_select],
+                                                     [button_back, button_count, button_next]])
+
+    return keyboard
+
+
+def keyboards_contact(list_orders: list[Order], block: int = 0) -> InlineKeyboardMarkup:
+    """
+    Список контактов
+    :param list_orders:
+    :param block:
+    :return:
+    """
+    logging.info(f'keyboards_payer')
+    button_select = InlineKeyboardButton(text='Выбрать',
+                                         callback_data=f'select_contact_{list_orders[block].id}')
+    button_back = InlineKeyboardButton(text='<<<<',
+                                       callback_data=f'contactlist_back_{block}')
+    button_count = InlineKeyboardButton(text=f'{block+1}/{len(list_orders)}',
+                                        callback_data='none')
+    button_next = InlineKeyboardButton(text='>>>>',
+                                       callback_data=f'contactlist_next_{block}')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_select],
+                                                     [button_back, button_count, button_next]])
+
+    return keyboard
+
+
+def keyboard_time_interval() -> InlineKeyboardMarkup:
+    """
+    Список временных интервалов доставки
+    :return:
+    """
+    logging.info(f'keyboards_payer')
+    button_1 = InlineKeyboardButton(text='8.00-11.00',
+                                    callback_data=f'timeinterval_8.00-11.00')
+    button_2 = InlineKeyboardButton(text='11.00-14.00',
+                                    callback_data=f'timeinterval_11.00-14.00')
+    button_3 = InlineKeyboardButton(text='14.00-17.00',
+                                    callback_data=f'timeinterval_14.00-17.00')
+    button_4 = InlineKeyboardButton(text='17.00-19.00',
+                                    callback_data=f'timeinterval_17.00-19.00')
+    button_5 = InlineKeyboardButton(text='Другое',
+                                    callback_data=f'timeinterval_other')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1, button_2], [button_3, button_4], [button_5]])
 
     return keyboard

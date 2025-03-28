@@ -11,7 +11,7 @@ def validate_russian_phone_number(phone_number: str) -> bool:
     logging.info('validate_russian_phone_number')
     # Паттерн для российских номеров телефона
     # Российские номера могут начинаться с +7, 8, или без кода страны
-    pattern = re.compile(r'^(\+7|8|7)?(\d{10})$')
+    pattern = re.compile(r'^(\+7)?(\d{10})$')
     # Проверка соответствия паттерну
     match = pattern.match(phone_number)
     return bool(match)
@@ -42,3 +42,20 @@ def validate_email(email: str):
     # Проверка соответствия паттерну
     match = pattern.match(email)
     return bool(match)
+
+
+def validate_inn(inn):
+    pattern_legal = r'^\d{10}$'
+    if re.match(pattern_legal, inn):
+        return True
+    else:
+        return False
+
+
+def validate_volume(volume: str):
+    pattern = r'^-?\d+(\.\d+)?$'
+    if re.match(pattern, volume):
+        return True
+    else:
+        return False
+

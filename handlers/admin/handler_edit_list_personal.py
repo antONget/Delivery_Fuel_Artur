@@ -22,6 +22,7 @@ import logging
 router = Router()
 config: Config = load_config()
 
+
 class Personal(StatesGroup):
     id_tg_personal = State()
 
@@ -36,7 +37,7 @@ async def process_change_list_personal(message: Message, bot: Bot) -> None:
     :param bot:
     :return:
     """
-    logging.info(f'process_change_list_personal: {message.chat.id}')
+    logging.info(f'process_change_list_personal: {message.from_user.id}')
     try:
         await message.edit_text(text="Выберите роль которую вы хотите изменить.",
                                 reply_markup=await kb.keyboard_select_role(tg_id=message.from_user.id))
@@ -55,7 +56,7 @@ async def process_select_action(callback: CallbackQuery, state: FSMContext, bot:
     :param bot:
     :return:
     """
-    logging.info(f'process_add_admin: {callback.message.chat.id} {callback.data}' )
+    logging.info(f'process_add_admin: {callback.from_user.id} {callback.data}' )
     edit_role = callback.data.split('_')[2]
     role = '<b>ПАРТНЕРА</b>'
     if edit_role == rq.UserRole.executor:
@@ -63,8 +64,13 @@ async def process_select_action(callback: CallbackQuery, state: FSMContext, bot:
     elif edit_role == rq.UserRole.admin:
         role = '<b>АДМИНИСТРАТОРА</b>'
     await state.update_data(edit_role=edit_role)
-    await callback.message.edit_text(text=f"Назначить или разжаловать пользователя как {role}?",
-                                     reply_markup=kb.keyboard_select_action())
+    print(edit_role)
+    if edit_role == 'executor':
+        await callback.message.edit_text(text=f"Назначить, разжаловать ВОДИТЕЛЯ или изменить никнейм?",
+                                         reply_markup=kb.keyboard_select_action_executor())
+    else:
+        await callback.message.edit_text(text=f"Назначить или разжаловать пользователя как {role}?",
+                                         reply_markup=kb.keyboard_select_action())
     await callback.answer()
 
 
@@ -78,7 +84,7 @@ async def process_personal_add(callback: CallbackQuery, state: FSMContext, bot: 
     :param bot:
     :return:
     """
-    logging.info(f'process_personal_add: {callback.message.chat.id}')
+    logging.info(f'process_personal_add: {callback.from_user.id}')
     rand_token = str(uuid4())
     data = await state.get_data()
     edit_role = data['edit_role']
@@ -178,7 +184,7 @@ async def process_del_admin(callback: CallbackQuery, state: FSMContext, bot: Bot
     :param bot:
     :return:
     """
-    logging.info(f'process_del_admin: {callback.message.chat.id}')
+    logging.info(f'process_del_admin: {callback.from_user.id}')
     data = await state.get_data()
     edit_role = data["edit_role"]
     role = '<b>ПАРТНЕРОВ</b>'
@@ -212,7 +218,7 @@ async def process_forward_del_admin(callback: CallbackQuery, state: FSMContext, 
     :param bot:
     :return:
     """
-    logging.info(f'process_forward_del_admin: {callback.message.chat.id}')
+    logging.info(f'process_forward_del_admin: {callback.from_user.id}')
     data = await state.get_data()
     edit_role = data["edit_role"]
     role = '<b>ПАРТНЕРОВ</b>'
@@ -245,7 +251,7 @@ async def process_back_del_admin(callback: CallbackQuery, state: FSMContext, bot
     :param bot:
     :return:
     """
-    logging.info(f'process_back_del_admin: {callback.message.chat.id}')
+    logging.info(f'process_back_del_admin: {callback.from_user.id}')
     data = await state.get_data()
     edit_role = data["edit_role"]
     role = '<b>ПАРТНЕРОВ</b>'
@@ -278,7 +284,7 @@ async def process_delete_user(callback: CallbackQuery, state: FSMContext, bot: B
     :param bot:
     :return:
     """
-    logging.info(f'process_delete_user: {callback.message.chat.id}')
+    logging.info(f'process_delete_user: {callback.from_user.id}')
     data = await state.get_data()
     edit_role = data["edit_role"]
     role = '<b>ПАРТНЕРОВ</b>'
@@ -303,8 +309,8 @@ async def process_not_del_personal_list(callback: CallbackQuery, bot: Bot) -> No
     :param bot:
     :return:
     """
-    logging.info(f'process_not_del_personal_list: {callback.message.chat.id}')
-    await bot.delete_message(chat_id=callback.message.chat.id,
+    logging.info(f'process_not_del_personal_list: {callback.from_user.id}')
+    await bot.delete_message(chat_id=callback.from_user.id,
                              message_id=callback.message.message_id)
     await callback.answer(text=f'Разжалование пользователя отменено', show_alert=True)
     await process_change_list_personal(message=callback.message, bot=bot)
@@ -313,8 +319,8 @@ async def process_not_del_personal_list(callback: CallbackQuery, bot: Bot) -> No
 @router.callback_query(F.data == 'del_personal_list')
 @error_handler
 async def process_del_personal_list(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
-    logging.info(f'process_del_personal_list: {callback.message.chat.id}')
-    await bot.delete_message(chat_id=callback.message.chat.id,
+    logging.info(f'process_del_personal_list: {callback.from_user.id}')
+    await bot.delete_message(chat_id=callback.from_user.id,
                              message_id=callback.message.message_id)
     data = await state.get_data()
     tg_id = data['del_personal']
@@ -326,8 +332,12 @@ async def process_del_personal_list(callback: CallbackQuery, state: FSMContext, 
         role = '<b>АДМИНИСТРАТОРОВ</b>'
     await rq.set_user_role(tg_id=tg_id, role=rq.UserRole.user)
     await callback.answer(text=f'Пользователь успешно удален из {role}', show_alert=True)
-    await bot.send_message(chat_id=tg_id,
-                           text=f'Вы удалены из списка {role}',
-                           reply_markup=ReplyKeyboardRemove())
+    try:
+        await bot.send_message(chat_id=tg_id,
+                               text=f'Вы удалены из списка {role}',
+                               reply_markup=ReplyKeyboardRemove())
+    except:
+        await callback.message.answer(text=f'Пользователь не оповещен об удалении из списка {role},'
+                                           f' возможно он заблокировал или не запускал бота')
     await asyncio.sleep(1)
     await process_change_list_personal(message=callback.message, bot=bot)

@@ -13,6 +13,7 @@ from datetime import datetime
 from database import requests as rq
 from database.models import Order, User
 from config_data.config import Config, load_config
+from filter.filter import validate_volume
 import logging
 
 router = Router()
@@ -59,14 +60,17 @@ async def select_type_order(callback: CallbackQuery, state: FSMContext, bot: Bot
                                                                status=rq.OrderStatus.work)
         if orders:
             info_user: User = await rq.get_user_by_id(tg_id=orders[0].tg_id)
-            order = f'<b>Заявка №{orders[0].id}</b>\n' \
-                    f'Заказчик: <a href="tg://user?id={info_user.tg_id}">{info_user.username}</a>\n' \
-                    f'Плательщик: <i>{orders[0].payer}</i>\n' \
-                    f'Адрес: <i>{orders[0].address}</i>\n' \
-                    f'Контактное лицо: <i>{orders[0].contact}</i>\n' \
-                    f'Время доставки: <i>{orders[0].time}</i>\n' \
-                    f'Количество топлива: <i>{orders[0].volume} литров</i>\n'
-            await callback.message.edit_text(text=f'{order}',
+            text_message = f'Выберите заказ\n\n' \
+                           f'Заявка: <i>№{orders[0].id}</i>\n' \
+                           f'Заказчик: <a href="tg://user?id={info_user.tg_id}">{info_user.username}</a>\n' \
+                           f'Плательщик: <i>{orders[0].payer}</i>\n' \
+                           f'ИНН: <i>{orders[0].inn}</i>\n' \
+                           f'Адрес: <i>{orders[0].address}</i>\n' \
+                           f'Контактное лицо: <i>{orders[0].contact}</i>\n' \
+                           f'Дата доставки: <i>{orders[0].date}</i>\n' \
+                           f'Время доставки: <i>{orders[0].time}</i>\n' \
+                           f'Количество топлива: <i>{orders[0].volume} литров</i>\n'
+            await callback.message.edit_text(text=f'{text_message}',
                                              reply_markup=kb.keyboards_select_item_one(list_item=orders,
                                                                                        block=0,
                                                                                        type_order='work'))
@@ -77,11 +81,14 @@ async def select_type_order(callback: CallbackQuery, state: FSMContext, bot: Bot
                                                                status=rq.OrderStatus.completed)
         if orders:
             info_user: User = await rq.get_user_by_id(tg_id=orders[0].tg_id)
-            order = f'<b>Заявка №{orders[0].id}</b>\n' \
+            order = f'Выберите заказ\n\n' \
+                    f'Заявка: <i>№{orders[0].id}</i>\n' \
                     f'Заказчик: <a href="tg://user?id={info_user.tg_id}">{info_user.username}</a>\n' \
                     f'Плательщик: <i>{orders[0].payer}</i>\n' \
+                    f'ИНН: <i>{orders[0].inn}</i>\n' \
                     f'Адрес: <i>{orders[0].address}</i>\n' \
                     f'Контактное лицо: <i>{orders[0].contact}</i>\n' \
+                    f'Дата доставки: <i>{orders[0].date}</i>\n' \
                     f'Время доставки: <i>{orders[0].time}</i>\n' \
                     f'Количество топлива: <i>{orders[0].volume} литров</i>\n'
             photo_order = orders[0].photo_ids_report
@@ -109,20 +116,25 @@ async def select_type_order(callback: CallbackQuery, state: FSMContext, bot: Bot
     type_select = callback.data.split('_')[1]
     data = await state.get_data()
     type_order = data['type_order']
+    order_id: int = int(callback.data.split('_')[-1])
+    info_order: Order = await rq.get_order_id(order_id=order_id)
+    if info_order.status == rq.OrderStatus.cancel:
+        await callback.message.edit_text(text=f'Заказ №{info_order.id} отменен')
+        return
     if type_select == 'select' and type_order == 'work':
-        order_id: int = int(callback.data.split('_')[-1])
+
         await state.update_data(order_id=order_id)
         await callback.message.edit_text(text=f'Пришлите количество отгруженного топлива №{order_id}',
                                          reply_markup=None)
         await state.set_state(StateReport.text_report)
         await callback.answer()
         return
-    if type_select == 'cancel' and type_order == 'work':
-        order_id: str = callback.data.split('_')[-1]
+    elif type_select == 'cancel' and type_order == 'work':
+        # order_id: str = callback.data.split('_')[-1]
         await state.update_data(order_id=order_id)
         await callback.message.edit_text(text=f'Вы отказались от выполнения заказа №{order_id},'
                                               f' укажите причину или нажмите "ПРОПУСТИТЬ"',
-                                         reply_markup=kb.keyboard_pass_comment(order_id=order_id))
+                                         reply_markup=kb.keyboard_pass_comment())
         await state.set_state(StateReport.comment_cancel)
         return
 
@@ -142,13 +154,16 @@ async def select_type_order(callback: CallbackQuery, state: FSMContext, bot: Bot
             elif block < 0:
                 block = count_item - 1
             info_user: User = await rq.get_user_by_id(tg_id=orders[block].tg_id)
-            order = f'<b>Заявка №{orders[block].id}</b>\n' \
+            order = f'Выберите заказ\n\n' \
+                    f'Заявка: <i>№{orders[0].id}</i>\n' \
                     f'Заказчик: <a href="tg://user?id={info_user.tg_id}">{info_user.username}</a>\n' \
-                    f'Плательщик: <i>{orders[block].payer}</i>\n' \
-                    f'Адрес: <i>{orders[block].address}</i>\n' \
-                    f'Контактное лицо: <i>{orders[block].contact}</i>\n' \
-                    f'Время доставки: <i>{orders[block].time}</i>\n' \
-                    f'Количество топлива: <i>{orders[block].volume} литров</i>\n'
+                    f'Плательщик: <i>{orders[0].payer}</i>\n' \
+                    f'ИНН: <i>{orders[0].inn}</i>\n' \
+                    f'Адрес: <i>{orders[0].address}</i>\n' \
+                    f'Контактное лицо: <i>{orders[0].contact}</i>\n' \
+                    f'Дата доставки: <i>{orders[0].date}</i>\n' \
+                    f'Время доставки: <i>{orders[0].time}</i>\n' \
+                    f'Количество топлива: <i>{orders[0].volume} литров</i>\n'
             try:
                 await callback.message.edit_text(text=f'{order}',
                                                  reply_markup=kb.keyboards_select_item_one(list_item=orders,
@@ -171,13 +186,16 @@ async def select_type_order(callback: CallbackQuery, state: FSMContext, bot: Bot
             elif block < 0:
                 block = count_item - 1
             info_user: User = await rq.get_user_by_id(tg_id=orders[block].tg_id)
-            order = f'<b>Заявка №{orders[block].id}</b>\n' \
+            order = f'Выберите заказ\n\n' \
+                    f'Заявка: <i>№{orders[0].id}</i>\n' \
                     f'Заказчик: <a href="tg://user?id={info_user.tg_id}">{info_user.username}</a>\n' \
-                    f'Плательщик: <i>{orders[block].payer}</i>\n' \
-                    f'Адрес: <i>{orders[block].address}</i>\n' \
-                    f'Контактное лицо: <i>{orders[block].contact}</i>\n' \
-                    f'Время доставки: <i>{orders[block].time}</i>\n' \
-                    f'Количество топлива: <i>{orders[block].volume} литров</i>\n'
+                    f'Плательщик: <i>{orders[0].payer}</i>\n' \
+                    f'ИНН: <i>{orders[0].inn}</i>\n' \
+                    f'Адрес: <i>{orders[0].address}</i>\n' \
+                    f'Контактное лицо: <i>{orders[0].contact}</i>\n' \
+                    f'Дата доставки: <i>{orders[0].date}</i>\n' \
+                    f'Время доставки: <i>{orders[0].time}</i>\n' \
+                    f'Количество топлива: <i>{orders[0].volume} литров</i>\n'
             photo_order = orders[block].photo_ids_report
             try:
                 await callback.message.edit_media(media=InputMediaPhoto(media=photo_order,
@@ -207,12 +225,12 @@ async def get_text_order(message: Message, state: FSMContext, bot: Bot) -> None:
     :param bot:
     :return:
     """
-    logging.info(f'get_text_order: {message.chat.id}')
+    logging.info(f'get_text_order: {message.from_user.id}')
     data = await state.get_data()
     if message.text:
-        if message.text.isdigit() and int(message.text) > 0:
+        if validate_volume(message.text) and float(message.text) > 0:
             text_order = message.text
-            await state.update_data(text_report=text_order)
+            await state.update_data(text_report=float(text_order))
             await message.answer(text='Ваш отчет получен добавьте фото квитанции')
             await state.set_state(StateReport.photo_report)
         else:
@@ -288,12 +306,14 @@ async def get_comment_cancel(message: Message, state: FSMContext, bot: Bot) -> N
     :param bot:
     :return:
     """
-    logging.info(f'get_comment_cancel: {message.chat.id}')
+    logging.info(f'get_comment_cancel: {message.from_user.id}')
     comment_cancel = message.text
-    await message.answer(text='Данные от вас получены и переданы')
+    await message.answer(text='Данные от вас получены и переданы администраторам')
     data = await state.get_data()
     order_id = data['order_id']
+    await rq.set_order_status(order_id=order_id, status=rq.OrderStatus.cancel)
     info_order: Order = await rq.get_order_id(order_id=order_id)
+    info_user: User = await rq.get_user_by_id(tg_id=info_order.tg_id)
     list_users: list[User] = await rq.get_users_role(role=rq.UserRole.executor)
     keyboard = keyboards_executor_personal(list_users=list_users,
                                            back=0,
@@ -305,10 +325,13 @@ async def get_comment_cancel(message: Message, state: FSMContext, bot: Bot) -> N
                                         f' отказался от выполнения заказа № {order_id},'
                                         f' комментарий: {comment_cancel}\n'
                                         f'Информация о заказе № {order_id}:\n'
-                                        f'Плательщик: <i>{info_order.payer}</i>\n'
-                                        f'Адрес: <i>{info_order.address}</i>\n'
-                                        f'Контактное лицо: <i>{info_order.contact}</i>\n'
-                                        f'Время доставки: <i>{info_order.time}</i>\n'
+                                        f'Заказчик: <a href="tg://user?id={info_order.tg_id}">{info_user.username}</a>\n' 
+                                        f'Плательщик: <i>{info_order.payer}</i>\n' 
+                                        f'ИНН: <i>{info_order.inn}</i>\n' 
+                                        f'Адрес: <i>{info_order.address}</i>\n' 
+                                        f'Контактное лицо: <i>{info_order.contact}</i>\n' 
+                                        f'Дата доставки: <i>{info_order.date}</i>\n' 
+                                        f'Время доставки: <i>{info_order.time}</i>\n' 
                                         f'Количество топлива: <i>{info_order.volume} литров</i>\n',
                                    keyboard=keyboard)
 
@@ -328,7 +351,9 @@ async def pass_comment(callback: CallbackQuery, state: FSMContext, bot: Bot) -> 
     await callback.message.edit_text(text='Данные от вас получены и переданы')
     data = await state.get_data()
     order_id = data['order_id']
+    await rq.set_order_status(order_id=order_id, status=rq.OrderStatus.cancel)
     info_order: Order = await rq.get_order_id(order_id=order_id)
+    info_user: User = await rq.get_user_by_id(tg_id=info_order.tg_id)
     list_users: list[User] = await rq.get_users_role(role=rq.UserRole.executor)
     keyboard = keyboards_executor_personal(list_users=list_users,
                                            back=0,
@@ -340,10 +365,13 @@ async def pass_comment(callback: CallbackQuery, state: FSMContext, bot: Bot) -> 
                                         f' отказался от выполнения заказа № {order_id},'
                                         f' комментарий: отсутствует\n'
                                         f'Информация о заказе № {order_id}:\n'
-                                        f'Плательщик: <i>{info_order.payer}</i>\n'
-                                        f'Адрес: <i>{info_order.address}</i>\n'
-                                        f'Контактное лицо: <i>{info_order.contact}</i>\n'
-                                        f'Время доставки: <i>{info_order.time}</i>\n'
+                                        f'Заказчик: <a href="tg://user?id={info_order.tg_id}">{info_user.username}</a>\n' 
+                                        f'Плательщик: <i>{info_order.payer}</i>\n' 
+                                        f'ИНН: <i>{info_order.inn}</i>\n' 
+                                        f'Адрес: <i>{info_order.address}</i>\n' 
+                                        f'Контактное лицо: <i>{info_order.contact}</i>\n' 
+                                        f'Дата доставки: <i>{info_order.date}</i>\n' 
+                                        f'Время доставки: <i>{info_order.time}</i>\n' 
                                         f'Количество топлива: <i>{info_order.volume} литров</i>\n',
                                    keyboard=keyboard)
     await callback.answer()

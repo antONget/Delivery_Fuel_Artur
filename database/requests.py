@@ -48,6 +48,21 @@ async def set_user_role(tg_id: int, role: str) -> None:
             await session.commit()
 
 
+async def set_user_nickname(tg_id: int, nickname: str) -> None:
+    """
+    Обновление никнейма пользователя
+    :param tg_id:
+    :param nickname:
+    :return:
+    """
+    logging.info('set_user_phone')
+    async with async_session() as session:
+        user = await session.scalar(select(User).where(User.tg_id == tg_id))
+        if user:
+            user.username = nickname
+            await session.commit()
+
+
 async def get_user_by_id(tg_id: int) -> User:
     """
     Получение информации о пользователе по tg_id
@@ -122,16 +137,10 @@ async def get_order_tg_id(tg_id: int | None) -> list[Order]:
             list_orders = await session.scalars(select(Order).where(Order.tg_id == tg_id))
         else:
             list_orders = await session.scalars(select(Order))
-        list_uniq_order = []
-        temp = []
-        for order in list_orders:
-            if order.payer not in temp:
-                list_uniq_order.append(order)
-                temp.append(order.payer)
-        return list_uniq_order
+        return [order for order in list_orders]
 
 
-async def get_orders_tg_id_status(tg_id_executor: int, status: str) -> list[Order]:
+async def get_orders_tg_id_status(tg_id_executor: int | None, status: str) -> list[Order]:
     """
     Получаем заявки по его tg_id и заданному статусу
     :param tg_id_executor:
@@ -140,8 +149,63 @@ async def get_orders_tg_id_status(tg_id_executor: int, status: str) -> list[Orde
     """
     logging.info('get_orders_tg_id_status')
     async with async_session() as session:
-        orders = await session.scalars(select(Order).where(Order.executor == tg_id_executor,
-                                                           Order.status == status))
+        if tg_id_executor:
+            orders = await session.scalars(select(Order).filter(Order.executor == tg_id_executor,
+                                                                Order.status == status))
+        else:
+            orders = await session.scalars(select(Order).where(Order.status == status))
+        list_order = [order for order in orders]
+        return list_order
+
+
+async def get_orders_tg_id_creator_status(tg_id_creator: int | None, status: str) -> list[Order]:
+    """
+    Получаем заявки по его tg_id и заданному статусу
+    :param tg_id_creator:
+    :param status:
+    :return:
+    """
+    logging.info('get_orders_tg_id_creator_status')
+    async with async_session() as session:
+        if tg_id_creator:
+            orders = await session.scalars(select(Order).filter(Order.tg_id == tg_id_creator))
+        else:
+            orders = await session.scalars(select(Order))
+        list_order = [order for order in orders]
+        return list_order
+
+
+async def get_orders_tg_id_creator_status_(tg_id_creator: int | None, status: str) -> list[Order]:
+    """
+    Получаем заявки по его tg_id и заданному статусу
+    :param tg_id_creator:
+    :param status:
+    :return:
+    """
+    logging.info('get_orders_tg_id_creator_status')
+    async with async_session() as session:
+        if tg_id_creator:
+            orders = await session.scalars(select(Order).filter(Order.tg_id == tg_id_creator,
+                                                                Order.status == OrderStatus.create))
+        else:
+            orders = await session.scalars(select(Order).where(Order.status == OrderStatus.create))
+        list_order = [order for order in orders]
+        return list_order
+
+
+async def get_create_orders_tg_id(tg_id_creator: int) -> list[Order]:
+    """
+    Получаем заявки создателя tg_id со статусом create
+    :param tg_id_creator:
+    :return:
+    """
+    logging.info('get_orders_tg_id_creator_status')
+    async with async_session() as session:
+        if tg_id_creator:
+            orders = await session.scalars(select(Order).filter(Order.tg_id == tg_id_creator,
+                                                                Order.status == OrderStatus.create))
+        else:
+            orders = await session.scalars(select(Order).where(Order.status == OrderStatus.create))
         list_order = [order for order in orders]
         return list_order
 
@@ -167,7 +231,7 @@ async def get_order_report(tg_id: int, data_1: datetime, data_2: datetime) -> (i
                                   day=int(data_str.split('-')[-3]))
             if data_1 <= order_data <= data_2:
                 quantity += 1
-                volume += order.volume
+                volume += float(order.volume)
         return quantity, volume
 
 
@@ -185,7 +249,7 @@ async def get_order_report_admin(data_1: datetime, data_2: datetime) -> (int, in
                                   day=int(data_str.split('-')[-3]))
             if data_1 <= order_data <= data_2:
                 quantity += 1
-                volume += order.volume
+                volume += float(order.volume)
                 orders_list.append(order)
         return quantity, volume, orders_list
 
@@ -202,6 +266,36 @@ async def set_order_status(order_id: int, status: str) -> None:
         order = await session.scalar(select(Order).where(Order.id == order_id))
         if order:
             order.status = status
+            await session.commit()
+
+
+async def set_order_payer(order_id: int, payer: str) -> None:
+    """
+    Обновление ПЛАТЕЛЬЩИКА заявки
+    :param order_id:
+    :param payer:
+    :return:
+    """
+    logging.info('set_order_payer')
+    async with async_session() as session:
+        order = await session.scalar(select(Order).where(Order.id == order_id))
+        if order:
+            order.payer = payer
+            await session.commit()
+
+
+async def set_order_inn(order_id: int, inn: str) -> None:
+    """
+    Обновление ИНН заявки
+    :param order_id:
+    :param inn:
+    :return:
+    """
+    logging.info('set_order_inn')
+    async with async_session() as session:
+        order = await session.scalar(select(Order).where(Order.id == order_id))
+        if order:
+            order.inn = inn
             await session.commit()
 
 
@@ -264,6 +358,20 @@ async def set_order_date_create(order_id: int, date_create: str) -> None:
         order = await session.scalar(select(Order).where(Order.id == order_id))
         if order:
             order.date_create = date_create
+            await session.commit()
+
+
+async def delete_order(order_id: int) -> None:
+    """
+    Удаление заказа
+    :param order_id:
+    :return:
+    """
+    logging.info('delete_order')
+    async with async_session() as session:
+        order = await session.scalar(select(Order).where(Order.id == order_id))
+        if order:
+            await session.delete(order)
             await session.commit()
 
 

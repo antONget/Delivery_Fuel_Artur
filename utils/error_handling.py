@@ -40,13 +40,13 @@ def error_handler(func):
             if len(error_traceback) > 4000:
                 for error_ in error_traceback[::4000]:
                     await bot.send_message(chat_id=config.tg_bot.support_id,
-                                           text=f"Ошибка у пользователя {message.chat.id if message else ''}.\n"
+                                           text=f"Ошибка у пользователя {message.from_user.id if message else ''}.\n"
                                                 f"Ошибка в функции {func_name} ({func_doc}):\n"
                                                 f"{str(e)}\n"
                                                 f"{error_}")
             else:
                 await bot.send_message(chat_id=config.tg_bot.support_id,
-                                       text=f"Ошибка у пользователя {message.chat.id if message else ''}.\n"
+                                       text=f"Ошибка у пользователя {message.from_user.id if message else ''}.\n"
                                             f"Ошибка в функции {func_name} ({func_doc}):\n"
                                             f"{str(e)}\n"
                                             f"{error_traceback}")

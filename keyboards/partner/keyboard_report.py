@@ -3,16 +3,17 @@ from database.models import Order
 import logging
 
 
-def keyboard_report() -> ReplyKeyboardMarkup:
+def keyboard_report_executor() -> InlineKeyboardMarkup:
     """
-    Клавиатура для открытия диалога с партнером
+    Клавиатура для получения отчета админом
     :return:
     """
-    logging.info("keyboard_payment")
-    button_1 = KeyboardButton(text='Завершить диалог')
-    button_2 = KeyboardButton(text='Главное меню')
-    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2]],
-                                   resize_keyboard=True)
+    logging.info('keyboard_select_mailing')
+    button_1 = InlineKeyboardButton(text='Отчет за период',
+                                    callback_data='report_period')
+    button_2 = InlineKeyboardButton(text='Отчет за водителя',
+                                    callback_data='report_executor')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2]])
     return keyboard
 
 

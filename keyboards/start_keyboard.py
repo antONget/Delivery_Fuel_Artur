@@ -13,12 +13,13 @@ def keyboard_start(role: str) -> ReplyKeyboardMarkup:
     keyboard = ''
     if role == UserRole.admin:
         button_1 = KeyboardButton(text='Персонал')
-        button_2 = KeyboardButton(text='Создать заказ')
+        button_2 = KeyboardButton(text='Заказы')
         button_3 = KeyboardButton(text='Отчет')
-        keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2], [button_3]],
+        button_4 = KeyboardButton(text='Необработанные заявки')
+        keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2], [button_3], [button_4]],
                                        resize_keyboard=True)
     elif role == UserRole.partner:
-        button_1 = KeyboardButton(text='Создать заказ')
+        button_1 = KeyboardButton(text='Заказы')
         button_2 = KeyboardButton(text='Отчет')
         keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2]],
                                        resize_keyboard=True)

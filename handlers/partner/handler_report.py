@@ -9,7 +9,7 @@ from aiogram_calendar import get_user_locale
 from filter.user_filter import IsRoleUser
 from filter.admin_filter import IsSuperAdmin
 
-from keyboards.partner.keyboard_report import keyboard_report_admin, keyboards_report_item_one
+from keyboards.partner.keyboard_report import keyboard_report_admin, keyboards_report_item_one, keyboard_report_executor
 from datetime import datetime, timedelta, date
 from filter.user_filter import check_role
 from database import requests as rq
@@ -34,6 +34,29 @@ async def process_buttons_press_report(message: Message, state: FSMContext):
     :return:
     """
     logging.info('process_buttons_press_report')
+    user: User = await rq.get_user_by_id(tg_id=message.from_user.id)
+    if user.role == rq.UserRole.admin:
+        await message.answer(text='Выберите раздел',
+                             reply_markup=keyboard_report_executor())
+    else:
+        await state.set_state(state=None)
+        calendar = aiogram_calendar.SimpleCalendar(show_alerts=True)
+        calendar.set_dates_range(datetime(2015, 1, 1), datetime(2050, 12, 31))
+        # получаем текущую дату
+        current_date = datetime.now()
+        # преобразуем ее в строку
+        date1 = current_date.strftime('%d/%m/%Y')
+        # преобразуем дату в список
+        list_date1 = date1.split('/')
+        await message.answer(
+            "Выберите начало периода получения отчета",
+            reply_markup=await calendar.start_calendar(year=int(list_date1[2]), month=int(list_date1[1]))
+        )
+        await state.set_state(StateReport.start_period)
+
+
+@router.callback_query(F.data == 'report_period')
+async def report_period(callback: CallbackQuery, state: FSMContext, bot: Bot):
     await state.set_state(state=None)
     calendar = aiogram_calendar.SimpleCalendar(show_alerts=True)
     calendar.set_dates_range(datetime(2015, 1, 1), datetime(2050, 12, 31))
@@ -43,7 +66,7 @@ async def process_buttons_press_report(message: Message, state: FSMContext):
     date1 = current_date.strftime('%d/%m/%Y')
     # преобразуем дату в список
     list_date1 = date1.split('/')
-    await message.answer(
+    await callback.message.edit_text(
         "Выберите начало периода получения отчета",
         reply_markup=await calendar.start_calendar(year=int(list_date1[2]), month=int(list_date1[1]))
     )

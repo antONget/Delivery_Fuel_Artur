@@ -13,6 +13,7 @@ async def check_role(tg_id: int, role: str) -> bool:
     """
     logging.info('check_role')
     user = await rq.get_user_by_id(tg_id=tg_id)
+    print('check_role', user.role, role)
     return user.role == role
 
 
@@ -24,6 +25,11 @@ class IsRoleAdmin(BaseFilter):
 class IsRoleExecutor(BaseFilter):
     async def __call__(self, message: Message) -> bool:
         return await check_role(tg_id=message.from_user.id, role=rq.UserRole.executor)
+
+
+class IsRolePartner(BaseFilter):
+    async def __call__(self, message: Message) -> bool:
+        return await check_role(tg_id=message.from_user.id, role=rq.UserRole.partner)
 
 
 class IsRoleUser(BaseFilter):

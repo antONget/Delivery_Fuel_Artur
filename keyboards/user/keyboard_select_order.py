@@ -38,7 +38,7 @@ def keyboards_select_item_one(list_item: list[Order], block: int, type_order: st
                                          callback_data=f'itemselect_cancel_{str(list_item[block].id)}')
     button_back = InlineKeyboardButton(text='<<<<',
                                        callback_data=f'itemselect_minus_{str(block)}')
-    button_count = InlineKeyboardButton(text=f'{count_item}',
+    button_count = InlineKeyboardButton(text=f'{block+1}/{count_item}',
                                         callback_data='none')
     button_next = InlineKeyboardButton(text='>>>>',
                                        callback_data=f'itemselect_plus_{str(block)}')
@@ -62,7 +62,7 @@ def keyboard_send_report() -> InlineKeyboardMarkup:
     return keyboard
 
 
-def keyboard_pass_comment(order_id: str) -> InlineKeyboardMarkup:
+def keyboard_pass_comment() -> InlineKeyboardMarkup:
     """
     Клавиатура для пропуска отправки комментария при отказе от выполнения заказа
     :return:

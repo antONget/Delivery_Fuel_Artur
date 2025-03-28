@@ -19,7 +19,7 @@ async def check_super_admin(telegram_id: int) -> bool:
 
 class IsSuperAdmin(BaseFilter):
     async def __call__(self, message: Message) -> bool:
-        return await check_super_admin(telegram_id=message.chat.id)
+        return await check_super_admin(telegram_id=message.from_user.id)
 
 
 

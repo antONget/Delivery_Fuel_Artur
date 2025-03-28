@@ -11,7 +11,7 @@ router = Router()
 
 @router.callback_query()
 async def all_callback(callback: CallbackQuery) -> None:
-    logging.info(f'all_callback: {callback.message.chat.id}')
+    logging.info(f'all_callback: {callback.from_user.id}')
     logging.info(callback.data)
 
 

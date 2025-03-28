@@ -27,8 +27,8 @@ class PersonalData(StatesGroup):
 
 @router.message(CommandStart())
 @router.message(F.text == 'Главное меню')
-@error_handler
-async def process_start_command_user(message: Message, state: FSMContext, command: CommandObject, bot: Bot) -> None:
+# @error_handler
+async def process_start_command_user(message: Message, state: FSMContext, command: CommandObject | None, bot: Bot) -> None:
     """
     Обработки запуска бота или ввода команды /start
     :param message:
@@ -37,9 +37,11 @@ async def process_start_command_user(message: Message, state: FSMContext, comman
     :param bot:
     :return:
     """
-    logging.info(f'process_start_command_user: {message.chat.id}')
+    logging.info(f'process_start_command_user: {message.from_user.id}')
     await state.set_state(state=None)
-    token = command.args
+    token = None
+    if command:
+        token = command.args
     # добавление пользователя в БД если еще его там нет
     user: User = await rq.get_user_by_id(tg_id=message.from_user.id)
     if not user:
@@ -63,7 +65,6 @@ async def process_start_command_user(message: Message, state: FSMContext, comman
                      "username": username}
         await rq.add_user(data=data_user)
     if token:
-        print(token)
         role = await rq.get_token(token=token, tg_id=message.from_user.id)
         if role:
             await rq.set_user_role(tg_id=message.from_user.id,
@@ -72,6 +73,7 @@ async def process_start_command_user(message: Message, state: FSMContext, comman
             await message.answer(text='Пригласительная ссылка не валидна')
     # вывод клавиатуры в зависимости от роли пользователя
     user: User = await rq.get_user_by_id(tg_id=message.from_user.id)
+    print(user.role)
     # пользователь
     if user.role == rq.UserRole.user:
         await message.answer(text='Бот доступен только авторизованным пользователям')
@@ -126,4 +128,24 @@ async def change_role_admin_select_role(callback: CallbackQuery, state: FSMConte
     await rq.set_user_role(tg_id=callback.from_user.id, role=select_role)
     await callback.message.edit_text(text=f'Роль {select_role.upper()} успешно установлена',
                                      reply_markup=None)
-    await process_start_command_user(message=callback.message, state=state, bot=bot)
+    user: User = await rq.get_user_by_id(tg_id=callback.from_user.id)
+    print('#', user.role)
+    # пользователь
+    if user.role == rq.UserRole.user:
+        await callback.message.answer(text='Бот доступен только авторизованным пользователям')
+
+    # исполнитель
+    elif user.role == rq.UserRole.executor:
+        await callback.message.answer(text=f'Добро пожаловать! Вы являетесь ВОДИТЕЛЕМ в проекте',
+                                      reply_markup=kb.keyboard_start(role=rq.UserRole.executor))
+
+    # администратор
+    elif user.role == rq.UserRole.admin:
+        await callback.message.answer(text=f'Добро пожаловать! Вы являетесь АДМИНИСТРАТОРОМ проекта',
+                             reply_markup=kb.keyboard_start(role=rq.UserRole.admin))
+
+    # партнер
+    elif user.role == rq.UserRole.partner:
+        await callback.message.answer(text=f'Добро пожаловать! Вы являетесь ПАРТНЕРОМ проекта',
+                                      reply_markup=kb.keyboard_start(role=rq.UserRole.partner))
+

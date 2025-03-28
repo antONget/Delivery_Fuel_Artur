@@ -4,9 +4,11 @@ from aiogram.enums import ParseMode
 
 from config_data.config import Config, load_config
 from handlers import error, other_handlers, start_handler
-from handlers.partner import handler_report, handler_order
+from handlers.partner import handler_report, handler_order, handler_order_repiet, handler_order_delete, \
+    handler_order_change, handler_create_order, handler_order_edition
 from handlers.user import handler_select_order
-from handlers.admin import handler_edit_list_personal
+from handlers.admin import handler_edit_list_personal, handler_edit_nickname, handler_show_create_order, \
+    handler_report_executor, handler_appointment_performer_order
 from notify_admins import on_startup_notify
 from database.models import async_main
 
@@ -44,9 +46,19 @@ async def main():
     # Регистрируем router в диспетчере
     dp.include_router(error.router)
     dp.include_router(start_handler.router)
-    dp.include_routers(handler_edit_list_personal.router)
+    dp.include_routers(handler_edit_list_personal.router,
+                       handler_edit_nickname.router,
+                       handler_report_executor.router,
+                       handler_appointment_performer_order.router,
+                       handler_create_order.router)
     dp.include_router(handler_select_order.router)
-    dp.include_routers(handler_order.router, handler_report.router)
+    dp.include_routers(handler_order.router,
+                       handler_report.router,
+                       handler_order_repiet.router,
+                       handler_order_delete.router,
+                       handler_show_create_order.router,
+                       handler_order_edition.router,
+                       handler_order_change.router)
     dp.include_router(other_handlers.router)
 
     # Пропускаем накопившиеся update и запускаем polling

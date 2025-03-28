@@ -39,6 +39,22 @@ def keyboard_select_action() -> InlineKeyboardMarkup:
     return keyboard
 
 
+def keyboard_select_action_executor() -> InlineKeyboardMarkup:
+    """
+    Клавиатура для выбора действия которое нужно совершить с ролью
+    :return:
+    """
+    logging.info('keyboard_select_action')
+    button_1 = InlineKeyboardButton(text='Назначить',
+                                    callback_data='personal_add')
+    button_2 = InlineKeyboardButton(text='Разжаловать',
+                                    callback_data='personal_delete')
+    button_3 = InlineKeyboardButton(text='Изменить никнейм',
+                                    callback_data='personal_nickname')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1, button_2],
+                                                     [button_3]])
+    return keyboard
+
 # def keyboards_add_partner(list_admin, back, forward, count) -> InlineKeyboardMarkup:
 #     """
 #     Клавиатура с пагинацией для добавления персонала
