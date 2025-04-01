@@ -31,15 +31,15 @@ class Personal(StatesGroup):
 
 @router.callback_query(F.data == 'report_executor')
 @error_handler
-async def process_del_admin(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
+async def report_executor(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
     """
-    Выбор пользователя для просмотра отчета
+    Выбор водителя для просмотра отчета
     :param callback:
     :param state:
     :param bot:
     :return:
     """
-    logging.info(f'process_del_admin: {callback.from_user.id}')
+    logging.info(f'report_executor: {callback.from_user.id}')
     list_users: list[User] = await rq.get_users_role(role=rq.UserRole.executor)
     if not list_users:
         await callback.answer(text=f'Нет водителей', show_alert=True)
@@ -191,6 +191,8 @@ async def process_ordershowlist_pagination(callback: CallbackQuery, state: FSMCo
                                                          callback_prefix_next='executorshow_next',
                                                          callback=callback,
                                                          message=None)
+
+
 @router.callback_query(F.data.startswith('selectexecutorshow'))
 async def selectexecutorshow(callback: CallbackQuery, state: FSMContext, bot: Bot):
     """

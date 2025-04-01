@@ -211,6 +211,17 @@ async def get_create_orders_tg_id(tg_id_creator: int) -> list[Order]:
 
 
 async def get_order_report(tg_id: int, data_1: datetime, data_2: datetime) -> (int, int):
+    """
+    Получаем завершенные заказы в зависимости от роли,
+     для ПАРТНЕРА созданные им,
+     для водителя выполненные им,
+     иначе получаем все завершенные заказы.
+    Производим подсчет количества заказов и отгруженного топлива
+    :param tg_id:
+    :param data_1:
+    :param data_2:
+    :return:
+    """
     logging.info('get_order_report')
     async with async_session() as session:
         user = await get_user_by_id(tg_id)
@@ -235,7 +246,14 @@ async def get_order_report(tg_id: int, data_1: datetime, data_2: datetime) -> (i
         return quantity, volume
 
 
-async def get_order_report_admin(data_1: datetime, data_2: datetime) -> (int, int, list):
+async def get_order_report_admin(data_1: datetime, data_2: datetime) -> (int, int, list[Order]):
+    """
+    1. Получаем все завершенные заказы в выбранный период
+    2. Производим подсчет количества выполненных заказов и отгруженного топлива
+    :param data_1:
+    :param data_2:
+    :return:
+    """
     logging.info('get_order_report')
     async with async_session() as session:
         orders = await session.scalars(select(Order).filter(Order.date_solution != ''))

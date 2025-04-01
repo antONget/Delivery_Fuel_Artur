@@ -244,7 +244,7 @@ async def get_text_order(message: Message, state: FSMContext, bot: Bot) -> None:
             await send_message_admins_media_group(bot=bot,
                                                   list_ids=[photo_id],
                                                   caption=f'Показания счетчика по заказу № {data["order_id"]} от  '
-                                                          f'<a href="tg://user?id={message.from_user.id}">ВОДИТЕЛЯ</a>')
+                                                          f'@{message.from_user.username}')
             await message.answer(text='Показания счетчика направлены администратору')
             return
         await state.update_data(photo_report=photo_id)
@@ -285,13 +285,13 @@ async def send_report(callback: CallbackQuery, state: FSMContext, bot: Bot) -> N
     await send_message_admins_media_group(bot=bot,
                                           list_ids=[info_order.photo_ids_report],
                                           caption=f'Отчет о выполнении заявки № {order_id} от  '
-                                                  f'<a href="tg://user?id={info_order.executor}">ВОДИТЕЛЯ</a>'
+                                                  f'@{callback.from_user.username}'
                                                   f' получен. Отгружено {info_order.text_report} литров топлива')
     if str(info_order.tg_id) not in config.tg_bot.admin_ids.split(','):
         await bot.send_photo(chat_id=info_order.tg_id,
                              photo=info_order.photo_ids_report,
                              caption=f'Отчет о выполнении заявки № {order_id} от  '
-                                     f'<a href="tg://user?id={info_order.executor}">ВОДИТЕЛЯ</a>'
+                                     f'@{callback.from_user.username}'
                                      f' получен. Отгружено {info_order.text_report} литров топлива')
     await callback.answer()
 
@@ -321,7 +321,7 @@ async def get_comment_cancel(message: Message, state: FSMContext, bot: Bot) -> N
                                            count=6,
                                            order_id=order_id)
     await send_message_admins_text(bot=bot,
-                                   text=f'<a href="tg://user?id={info_order.executor}">ВОДИТЕЛЬ</a>'
+                                   text=f'@{message.from_user.username}'
                                         f' отказался от выполнения заказа № {order_id},'
                                         f' комментарий: {comment_cancel}\n'
                                         f'Информация о заказе № {order_id}:\n'
@@ -361,7 +361,7 @@ async def pass_comment(callback: CallbackQuery, state: FSMContext, bot: Bot) -> 
                                            count=6,
                                            order_id=order_id)
     await send_message_admins_text(bot=bot,
-                                   text=f'<a href="tg://user?id={info_order.executor}">ВОДИТЕЛЬ</a>'
+                                   text=f'@{callback.from_user.username}'
                                         f' отказался от выполнения заказа № {order_id},'
                                         f' комментарий: отсутствует\n'
                                         f'Информация о заказе № {order_id}:\n'

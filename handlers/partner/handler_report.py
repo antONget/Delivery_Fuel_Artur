@@ -157,8 +157,8 @@ async def report_general(callback: CallbackQuery, state: FSMContext, bot: Bot):
 
 
 @router.callback_query(F.data == 'report_partner')
-async def report_general(callback: CallbackQuery, state: FSMContext, bot: Bot):
-    logging.info('report_general')
+async def report_partner(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    logging.info('report_partner')
     await callback.message.delete()
     data = await state.get_data()
     quantity_total, volume_total, orders = await rq.get_order_report_admin(data_1=data["start_period"],
@@ -168,8 +168,10 @@ async def report_general(callback: CallbackQuery, state: FSMContext, bot: Bot):
         order = f'<b>Заявка №{orders[0].id}</b>\n' \
                 f'Заказчик: <a href="tg://user?id={info_user.tg_id}">{info_user.username}</a>\n' \
                 f'Плательщик: <i>{orders[0].payer}</i>\n' \
+                f'ИНН: < i > {orders[0].inn} </i>\n' \
                 f'Адрес: <i>{orders[0].address}</i>\n' \
                 f'Контактное лицо: <i>{orders[0].contact}</i>\n' \
+                f'Дата доставки: <i>{orders[0].date}</i>\n' \
                 f'Время доставки: <i>{orders[0].time}</i>\n' \
                 f'Количество топлива: <i>{orders[0].volume} литров</i>\n'
         photo_order = orders[0].photo_ids_report
@@ -183,8 +185,8 @@ async def report_general(callback: CallbackQuery, state: FSMContext, bot: Bot):
 
 
 @router.callback_query(F.data.startswith('itemreport_'))
-async def report_general(callback: CallbackQuery, state: FSMContext, bot: Bot):
-    logging.info('report_general')
+async def report_itemreport(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    logging.info('report_itemreport')
     type_select = callback.data.split('_')[1]
     data = await state.get_data()
     block = int(callback.data.split('_')[-1])
