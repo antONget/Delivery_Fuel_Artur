@@ -116,27 +116,29 @@ async def select_type_order(callback: CallbackQuery, state: FSMContext, bot: Bot
     type_select = callback.data.split('_')[1]
     data = await state.get_data()
     type_order = data['type_order']
-    order_id: int = int(callback.data.split('_')[-1])
-    info_order: Order = await rq.get_order_id(order_id=order_id)
-    if info_order.status == rq.OrderStatus.cancel:
-        await callback.message.edit_text(text=f'Заказ №{info_order.id} отменен')
-        return
-    if type_select == 'select' and type_order == 'work':
 
-        await state.update_data(order_id=order_id)
-        await callback.message.edit_text(text=f'Пришлите количество отгруженного топлива №{order_id}',
-                                         reply_markup=None)
-        await state.set_state(StateReport.text_report)
-        await callback.answer()
-        return
-    elif type_select == 'cancel' and type_order == 'work':
-        # order_id: str = callback.data.split('_')[-1]
-        await state.update_data(order_id=order_id)
-        await callback.message.edit_text(text=f'Вы отказались от выполнения заказа №{order_id},'
-                                              f' укажите причину или нажмите "ПРОПУСТИТЬ"',
-                                         reply_markup=kb.keyboard_pass_comment())
-        await state.set_state(StateReport.comment_cancel)
-        return
+    if type_select in ['select', 'cancel']:
+        order_id: int = int(callback.data.split('_')[-1])
+        info_order: Order = await rq.get_order_id(order_id=order_id)
+        if info_order.status == rq.OrderStatus.cancel:
+            await callback.message.edit_text(text=f'Заказ №{info_order.id} отменен')
+            return
+        if type_select == 'select' and type_order == 'work':
+
+            await state.update_data(order_id=order_id)
+            await callback.message.edit_text(text=f'Пришлите количество отгруженного топлива №{order_id}',
+                                             reply_markup=None)
+            await state.set_state(StateReport.text_report)
+            await callback.answer()
+            return
+        elif type_select == 'cancel' and type_order == 'work':
+            # order_id: str = callback.data.split('_')[-1]
+            await state.update_data(order_id=order_id)
+            await callback.message.edit_text(text=f'Вы отказались от выполнения заказа №{order_id},'
+                                                  f' укажите причину или нажмите "ПРОПУСТИТЬ"',
+                                             reply_markup=kb.keyboard_pass_comment())
+            await state.set_state(StateReport.comment_cancel)
+            return
 
     block = int(callback.data.split('_')[-1])
     if type_select == 'plus':

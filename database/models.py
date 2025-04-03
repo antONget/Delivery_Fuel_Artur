@@ -34,9 +34,9 @@ class Order(Base):
     status: Mapped[str] = mapped_column(String)
     date_create: Mapped[str] = mapped_column(String)
     executor: Mapped[int] = mapped_column(BigInteger, default=0)
-    date_solution: Mapped[str] = mapped_column(String, default='')
-    text_report: Mapped[str] = mapped_column(String, default='')
-    photo_ids_report: Mapped[str] = mapped_column(String, default='')
+    date_solution: Mapped[str] = mapped_column(String, nullable=True)
+    text_report: Mapped[str] = mapped_column(String, nullable=True)
+    photo_ids_report: Mapped[str] = mapped_column(String, nullable=True)
 
 
 class Token(Base):
