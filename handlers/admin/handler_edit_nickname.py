@@ -39,9 +39,7 @@ async def process_personal_nickname(callback: CallbackQuery, state: FSMContext, 
     :return:
     """
     logging.info(f'process_personal_nickname: {callback.from_user.id}')
-    data = await state.get_data()
-    edit_role = data["edit_role"]
-    list_users: list[User] = await rq.get_users_role(role=edit_role)
+    list_users: list[User] = await rq.get_users_role(role=rq.UserRole.executor)
     if not list_users:
         await callback.answer(text=f'Нет водителей для смены никнейма', show_alert=True)
         return
@@ -65,9 +63,7 @@ async def process_forward_nickname(callback: CallbackQuery, state: FSMContext, b
     :return:
     """
     logging.info(f'process_forward_nickname: {callback.from_user.id}')
-    data = await state.get_data()
-    edit_role = data["edit_role"]
-    list_users: list[User] = await rq.get_users_role(role=edit_role)
+    list_users: list[User] = await rq.get_users_role(role=rq.UserRole.executor)
     forward = int(callback.data.split('_')[-1]) + 1
     back = forward - 2
     keyboard = kb.keyboards_edit_nickname(list_users=list_users,
@@ -93,9 +89,7 @@ async def process_back_nickname(callback: CallbackQuery, state: FSMContext, bot:
     :return:
     """
     logging.info(f'process_back_nickname: {callback.from_user.id}')
-    data = await state.get_data()
-    edit_role = data["edit_role"]
-    list_users = await rq.get_users_role(role=edit_role)
+    list_users = await rq.get_users_role(role=rq.UserRole.executor)
     back = int(callback.data.split('_')[3]) - 1
     forward = back + 2
     keyboard = kb.keyboards_edit_nickname(list_users=list_users,
@@ -139,7 +133,7 @@ async def process_not_change_nickname(callback: CallbackQuery, bot: Bot) -> None
     :return:
     """
     logging.info(f'process_not_change_nickname: {callback.from_user.id}')
-    await callback.message.edit_text(text=f'Изменене никнейма отменено')
+    await callback.message.edit_text(text=f'Изменение никнейма отменено')
 
 
 @router.message(F.text, StateFilter(Personal.nickname))
