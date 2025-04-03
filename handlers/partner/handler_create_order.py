@@ -18,7 +18,7 @@ from utils.send_admins import send_message_admins_text
 from filter.user_filter import check_role
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 config: Config = load_config()
 router = Router()
@@ -379,13 +379,18 @@ async def process_simple_calendar(callback: CallbackQuery,
     selected, date_select = await calendar.process_selection(callback, callback_data)
     if selected:
         current_date = datetime.now()
+        date_select = date_select + timedelta(hours=14)
+        # print(current_date.hour, current_date, date_select + timedelta(days=1))
         if current_date < date_select:
             date_order = date_select.strftime("%d.%m.%Y")
             await state.update_data(date_order=date_order)
             await callback.message.answer(text='Выберите удобный временной интервал для доставки',
                                           reply_markup=kb.keyboard_time_interval())
         else:
-            await callback.answer(text='В прошлое не доставляем, выберите корректную дату', show_alert=True)
+            if current_date.day == date_select.day:
+                await callback.answer(text='В день доставки заявку можно оставить до 14 часов', show_alert=True)
+            else:
+                await callback.answer(text='В прошлое не доставляем, выберите корректную дату', show_alert=True)
             calendar = aiogram_calendar.SimpleCalendar(show_alerts=True)
             calendar.set_dates_range(datetime(2015, 1, 1), datetime(2050, 12, 31))
             # получаем текущую дату
