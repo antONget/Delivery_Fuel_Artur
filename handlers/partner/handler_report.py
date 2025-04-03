@@ -168,12 +168,13 @@ async def report_partner(callback: CallbackQuery, state: FSMContext, bot: Bot):
         order = f'<b>Заявка №{orders[0].id}</b>\n' \
                 f'Заказчик: <a href="tg://user?id={info_user.tg_id}">{info_user.username}</a>\n' \
                 f'Плательщик: <i>{orders[0].payer}</i>\n' \
-                f'ИНН: < i > {orders[0].inn} </i>\n' \
+                f'ИНН: <i> {orders[0].inn if orders[0].inn else "не указано"} </i>\n' \
                 f'Адрес: <i>{orders[0].address}</i>\n' \
                 f'Контактное лицо: <i>{orders[0].contact}</i>\n' \
-                f'Дата доставки: <i>{orders[0].date}</i>\n' \
+                f'Дата доставки: <i>{orders[0].date if orders[0].date else "не указано"}</i>\n' \
                 f'Время доставки: <i>{orders[0].time}</i>\n' \
                 f'Количество топлива: <i>{orders[0].volume} литров</i>\n'
+        print(order)
         photo_order = orders[0].photo_ids_report
         await callback.message.answer_photo(photo=photo_order,
                                             caption=f'{order}',
