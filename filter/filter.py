@@ -45,7 +45,7 @@ def validate_email(email: str):
 
 
 def validate_inn(inn):
-    pattern_legal = r'^\d{10}$'
+    pattern_legal = r'^\d{10}$|^\d{12}$'
     if re.match(pattern_legal, inn):
         return True
     else:
