@@ -166,7 +166,10 @@ async def process_deleteorder(callback: CallbackQuery, state: FSMContext, bot: B
     info_order = await rq.get_order_id(order_id=order_id)
     if action == 'confirm':
         await rq.delete_order(order_id=order_id)
-        await callback.message.edit_text(text=f'Удаление заказа №{order_id} прошло успешно')
+        try:
+            await callback.message.edit_text(text=f'Удаление заказа №{order_id} прошло успешно')
+        except:
+            await callback.message.edit_text(text=f'Удаление заказа №{order_id} прошло успешно.')
     else:
         await callback.message.edit_text(text=f'Удаление заказа №{order_id} отменено')
 

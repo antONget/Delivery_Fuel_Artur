@@ -56,12 +56,12 @@ async def process_forward_executor(callback: CallbackQuery, state: FSMContext, b
     if info_order.status == rq.OrderStatus.work:
         executor: User = await rq.get_user_by_id(tg_id=info_order.executor)
         await callback.message.edit_text(text=f'Заказ №{order_id} уже распределен, назначен ВОДИТЕЛЬ '
-                                              f'<a href="tg://user?id={info_order.executor}">{executor.username}</a')
+                                              f'<a href="tg://user?id={info_order.executor}">{executor.username}</a>')
         return
     if info_order.status == rq.OrderStatus.completed:
         executor: User = await rq.get_user_by_id(tg_id=info_order.executor)
         await callback.message.edit_text(text=f'Заказ №{order_id} уже выполнен, исполнитель ВОДИТЕЛЬ '
-                                              f'<a href="tg://user?id={info_order.executor}">{executor.username}</a')
+                                              f'<a href="tg://user?id={info_order.executor}">{executor.username}</a>')
         return
     info_user: User = await rq.get_user_by_id(tg_id=info_order.tg_id)
     back = forward - 2
@@ -184,14 +184,14 @@ async def process_executor_select(callback: CallbackQuery, state: FSMContext, bo
     if info_order.status == rq.OrderStatus.work:
         executor: User = await rq.get_user_by_id(tg_id=info_order.executor)
         await callback.message.edit_text(text=f'Заказ №{order_id} уже распределен, назначен ВОДИТЕЛЬ '
-                                              f'<a href="tg://user?id={info_order.executor}">{executor.username}</a')
+                                              f'<a href="tg://user?id={info_order.executor}">{executor.username}</a>')
         return
     if info_order.status == rq.OrderStatus.completed:
         executor: User = await rq.get_user_by_id(tg_id=info_order.executor)
         await callback.message.edit_text(text=f'Заказ №{order_id} уже выполнен, исполнитель ВОДИТЕЛЬ '
-                                              f'<a href="tg://user?id={info_order.executor}">{executor.username}</a')
+                                              f'<a href="tg://user?id={info_order.executor}">{executor.username}</a>')
         return
-    # проверка что водитель может быть назанчен на заказ (бот может отправить ему сообщение)
+    # проверка что, водитель может быть назанчен на заказ (бот может отправить ему сообщение)
     try:
         await bot.send_chat_action(callback.from_user.id, 'typing')
     except:
