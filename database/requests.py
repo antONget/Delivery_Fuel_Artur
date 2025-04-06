@@ -317,6 +317,81 @@ async def set_order_inn(order_id: int, inn: str) -> None:
             await session.commit()
 
 
+async def set_order_address(order_id: int, address: str) -> None:
+    """
+    Обновление ИНН заявки
+    :param order_id:
+    :param address:
+    :return:
+    """
+    logging.info('set_order_inn')
+    async with async_session() as session:
+        order = await session.scalar(select(Order).where(Order.id == order_id))
+        if order:
+            order.address = address
+            await session.commit()
+
+
+async def set_order_contact(order_id: int, contact: str) -> None:
+    """
+    Обновление contact
+    :param order_id:
+    :param contact:
+    :return:
+    """
+    logging.info('set_order_inn')
+    async with async_session() as session:
+        order = await session.scalar(select(Order).where(Order.id == order_id))
+        if order:
+            order.contact = contact
+            await session.commit()
+
+
+async def set_order_date(order_id: int, date_order: str) -> None:
+    """
+    Обновление date_order
+    :param order_id:
+    :param date_order:
+    :return:
+    """
+    logging.info('set_order_date')
+    async with async_session() as session:
+        order = await session.scalar(select(Order).where(Order.id == order_id))
+        if order:
+            order.date = date_order
+            await session.commit()
+
+
+async def set_order_time(order_id: int, time_order: str) -> None:
+    """
+    Обновление date_order
+    :param order_id:
+    :param time_order:
+    :return:
+    """
+    logging.info('set_order_date')
+    async with async_session() as session:
+        order = await session.scalar(select(Order).where(Order.id == order_id))
+        if order:
+            order.time = time_order
+            await session.commit()
+
+
+async def set_order_volume(order_id: int, volume_order: str) -> None:
+    """
+    Обновление date_order
+    :param order_id:
+    :param volume_order:
+    :return:
+    """
+    logging.info('set_order_date')
+    async with async_session() as session:
+        order = await session.scalar(select(Order).where(Order.id == order_id))
+        if order:
+            order.volume = volume_order
+            await session.commit()
+
+
 async def set_order_report(order_id: int, photo_ids_report: str, text_order: str) -> None:
     """
     Обновление отчета в заявке

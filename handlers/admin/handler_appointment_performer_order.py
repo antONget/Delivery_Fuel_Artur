@@ -326,8 +326,11 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
                                                ' возможно он заблокировал или не запускал бота')
         list_admins: list[User] = await rq.get_users_role(role=rq.UserRole.admin)
         for admin in list_admins:
-            await bot.send_message(chat_id=admin.tg_id,
-                                   text=f'На заказ №{order_id} администратором @{callback.from_user.username}'
-                                        f' назначен водитель <a href="tg://user?id={user_info.tg_id}">'
-                                        f'{user_info.username}</a>')
+            try:
+                await bot.send_message(chat_id=admin.tg_id,
+                                       text=f'На заказ №{order_id} администратором @{callback.from_user.username}'
+                                            f' назначен водитель <a href="tg://user?id={user_info.tg_id}">'
+                                            f'{user_info.username}</a>')
+            except:
+                pass
     await callback.answer()

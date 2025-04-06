@@ -489,7 +489,7 @@ async def get_volume_order(message: Message, state: FSMContext, bot: Bot) -> Non
         list_admins: list[User] = await rq.get_users_role(role=rq.UserRole.admin)
         admins_tg_id: list[int] = [admin.tg_id for admin in list_admins]
         if message.from_user.id in admins_tg_id:
-            await message.answer(text=f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}'
+            await message.answer(text=f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}\n'
                                       f'Плательщик: <i>{data["payer_order"]}</i>\n'
                                       f'ИНН: <i>{data["inn_order"]}</i>\n'
                                       f'Адрес: <i>{data["address_order"]}</i>\n'

@@ -132,6 +132,7 @@ async def process_edittorder(callback: CallbackQuery, state: FSMContext, bot: Bo
     logging.info(f'process_edittorder: {callback.from_user.id}')
     order_id = int(callback.data.split('_')[-1])
     data = await state.get_data()
+    await state.clear()
     await state.update_data(order_id=order_id)
     info_order = await rq.get_order_id(order_id=order_id)
     if info_order.status == rq.OrderStatus.create:
@@ -708,9 +709,24 @@ async def orderedit_confirm(callback: CallbackQuery, state: FSMContext, bot: Bot
     :return:
     """
     logging.info(f'orderedit_confirm: {callback.from_user.id}')
+    await callback.message.delete()
     data = await state.get_data()
     order_id = data['order_id']
     info_order = await rq.get_order_id(order_id=order_id)
+    payer = data.get('payer_order', info_order.payer)
+    await rq.set_order_payer(order_id=order_id, payer=payer)
+    inn = data.get('inn_order', info_order.inn)
+    await rq.set_order_inn(order_id=order_id, inn=inn)
+    address = data.get('address_order', info_order.address)
+    await rq.set_order_address(order_id=order_id, address=address)
+    contact = data.get('contact_order', info_order.contact)
+    await rq.set_order_contact(order_id=order_id, contact=contact)
+    date_order = data.get('date_order', info_order.contact)
+    await rq.set_order_date(order_id=order_id, date_order=date_order)
+    time_order = data.get('time_order', info_order.time)
+    await rq.set_order_time(order_id=order_id, time_order=time_order)
+    volume_order = data.get('volume_order', info_order.volume)
+    await rq.set_order_volume(order_id=order_id, volume_order=volume_order)
     list_admins: list[User] = await rq.get_users_role(role=rq.UserRole.admin)
     admins_tg_id: list[int] = [admin.tg_id for admin in list_admins]
     await state.update_data(order_id=order_id)
