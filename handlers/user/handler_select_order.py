@@ -157,15 +157,15 @@ async def select_type_order(callback: CallbackQuery, state: FSMContext, bot: Bot
                 block = count_item - 1
             info_user: User = await rq.get_user_by_id(tg_id=orders[block].tg_id)
             order = f'Выберите заказ\n\n' \
-                    f'Заявка: <i>№{orders[0].id}</i>\n' \
+                    f'Заявка: <i>№{orders[block].id}</i>\n' \
                     f'Заказчик: <a href="tg://user?id={info_user.tg_id}">{info_user.username}</a>\n' \
-                    f'Плательщик: <i>{orders[0].payer}</i>\n' \
-                    f'ИНН: <i>{orders[0].inn}</i>\n' \
-                    f'Адрес: <i>{orders[0].address}</i>\n' \
-                    f'Контактное лицо: <i>{orders[0].contact}</i>\n' \
-                    f'Дата доставки: <i>{orders[0].date}</i>\n' \
-                    f'Время доставки: <i>{orders[0].time}</i>\n' \
-                    f'Количество топлива: <i>{orders[0].volume} литров</i>\n'
+                    f'Плательщик: <i>{orders[block].payer}</i>\n' \
+                    f'ИНН: <i>{orders[block].inn}</i>\n' \
+                    f'Адрес: <i>{orders[block].address}</i>\n' \
+                    f'Контактное лицо: <i>{orders[block].contact}</i>\n' \
+                    f'Дата доставки: <i>{orders[block].date}</i>\n' \
+                    f'Время доставки: <i>{orders[block].time}</i>\n' \
+                    f'Количество топлива: <i>{orders[block].volume} литров</i>\n'
             try:
                 await callback.message.edit_text(text=f'{order}',
                                                  reply_markup=kb.keyboards_select_item_one(list_item=orders,
@@ -189,15 +189,15 @@ async def select_type_order(callback: CallbackQuery, state: FSMContext, bot: Bot
                 block = count_item - 1
             info_user: User = await rq.get_user_by_id(tg_id=orders[block].tg_id)
             order = f'Выберите заказ\n\n' \
-                    f'Заявка: <i>№{orders[0].id}</i>\n' \
+                    f'Заявка: <i>№{orders[block].id}</i>\n' \
                     f'Заказчик: <a href="tg://user?id={info_user.tg_id}">{info_user.username}</a>\n' \
-                    f'Плательщик: <i>{orders[0].payer}</i>\n' \
-                    f'ИНН: <i>{orders[0].inn}</i>\n' \
-                    f'Адрес: <i>{orders[0].address}</i>\n' \
-                    f'Контактное лицо: <i>{orders[0].contact}</i>\n' \
-                    f'Дата доставки: <i>{orders[0].date}</i>\n' \
-                    f'Время доставки: <i>{orders[0].time}</i>\n' \
-                    f'Количество топлива: <i>{orders[0].volume} литров</i>\n'
+                    f'Плательщик: <i>{orders[block].payer}</i>\n' \
+                    f'ИНН: <i>{orders[block].inn}</i>\n' \
+                    f'Адрес: <i>{orders[block].address}</i>\n' \
+                    f'Контактное лицо: <i>{orders[block].contact}</i>\n' \
+                    f'Дата доставки: <i>{orders[block].date}</i>\n' \
+                    f'Время доставки: <i>{orders[block].time}</i>\n' \
+                    f'Количество топлива: <i>{orders[block].volume} литров</i>\n'
             photo_order = orders[block].photo_ids_report
             try:
                 await callback.message.edit_media(media=InputMediaPhoto(media=photo_order,
