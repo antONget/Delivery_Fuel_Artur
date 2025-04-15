@@ -380,8 +380,9 @@ async def process_simple_calendar(callback: CallbackQuery,
     if selected:
         current_date = datetime.now()
         date_select = date_select + timedelta(hours=14)
+        logging.info(f'{current_date}||||{date_select}')
         # print(current_date.hour, current_date, date_select + timedelta(days=1))
-        if current_date.day <= date_select.day and current_date.hour < date_select.hour:
+        if current_date < date_select:
             date_order = date_select.strftime("%d.%m.%Y")
             await state.update_data(date_order=date_order)
             await callback.message.answer(text='Выберите удобный временной интервал для доставки',
