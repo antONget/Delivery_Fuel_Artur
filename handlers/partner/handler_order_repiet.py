@@ -7,7 +7,7 @@ import aiogram_calendar
 from aiogram.filters.callback_data import CallbackData
 
 from keyboards.partner.keyboard_order_repiet import keyboard_repiet, keyboard_action_repiet, keyboards_payer, \
-    keyboards_inn, keyboards_contact, keyboard_time_interval
+    keyboards_inn, keyboards_contact, keyboard_time_interval, keyboard_time_interval_r
 from keyboards.partner.keyboard_order import keyboards_executor_personal
 import database.requests as rq
 from database.models import User, Order
@@ -19,7 +19,7 @@ from utils.utils_keyboard import utils_handler_pagination_to_composite_text
 from filter.user_filter import check_role
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 config: Config = load_config()
 router = Router()
@@ -30,6 +30,12 @@ class OrderChange(StatesGroup):
     inn_state = State()
     address_state = State()
     contact_state = State()
+    date_state = State()
+    time_state = State()
+    volume_state = State()
+
+
+class OrderRepeat(StatesGroup):
     date_state = State()
     time_state = State()
     volume_state = State()
@@ -163,62 +169,75 @@ async def process_repeatorder(callback: CallbackQuery, state: FSMContext, bot: B
     order_id = data['order_id']
     info_order = await rq.get_order_id(order_id=order_id)
     if action == 'confirm':
-        order_data = {"tg_id": callback.from_user.id,
-                      "payer": data['payer_order'] if data.get('payer_order') else info_order.payer,
-                      "inn": data['inn_order'] if data.get('inn_order') else info_order.inn,
-                      "address": data['address_order'] if data.get('address_order') else info_order.address,
-                      "contact": data['contact_order'] if data.get('contact_order') else info_order.contact,
-                      "date": data['date_order'] if data.get('date_order') else info_order.date,
-                      "time": data['time_order'] if data.get('time_order') else info_order.time,
-                      "volume": data['volume_order'] if data.get('volume_order') else info_order.volume,
-                      "status": rq.OrderStatus.create,
-                      "date_create": datetime.now().strftime('%d.%m.%Y %H:%M')}
-        order_id: int = await rq.add_order(data=order_data)
-        await state.update_data(order_id=order_id)
-        list_users: list[User] = await rq.get_users_role(role=rq.UserRole.executor)
-        if not list_users:
-            await callback.message.answer(text=f'Нет ВОДИТЕЛЕЙ для назначения их на заказ. Добавьте водителей.')
-            return
-        keyboard = keyboards_executor_personal(list_users=list_users,
-                                               back=0,
-                                               forward=2,
-                                               count=6,
-                                               order_id=order_id)
-        list_admins: list[User] = await rq.get_users_role(role=rq.UserRole.admin)
-        admins_tg_id: list[int] = [admin.tg_id for admin in list_admins]
-        info_order: Order = await rq.get_order_id(order_id=order_id)
-        if callback.from_user.id in admins_tg_id:
-            await callback.message.answer(text=f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}'
-                                               f'Плательщик: <i>{info_order.payer}</i>\n'
-                                               f'ИНН: <i>{info_order.inn}</i>\n'
-                                               f'Адрес: <i>{info_order.address}</i>\n'
-                                               f'Контактное лицо: <i>{info_order.contact}</i>\n'
-                                               f'Дата доставки: <i>{info_order.date}</i>\n'
-                                               f'Время доставки: <i>{info_order.time}</i>\n'
-                                               f'Количество топлива: <i>{info_order.volume} литров</i>\n',
-                                          reply_markup=keyboard)
-        else:
-            await callback.message.edit_text(text=f'Заказ № {order_id} создан и передан администратору. '
-                                                  f'О смене статуса заказа мы вас оповестим')
-            admins: list[User] = await rq.get_users_role(role=rq.UserRole.admin)
-            for chat_id in admins:
-                try:
-                    await bot.send_message(chat_id=chat_id.tg_id,
-                                           text=f'Заказ № {order_id} создан партнером'
-                                                f' <a href="tg://user?id={callback.from_user.id}">'
-                                                f'{callback.from_user.username}</a>\n\n'
-                                                f'Плательщик: <i>{info_order.payer}</i>\n'
-                                                f'ИНН: <i>{info_order.inn}</i>\n'
-                                                f'Адрес: <i>{info_order.address}</i>\n'
-                                                f'Контактное лицо: <i>{info_order.contact}</i>\n'
-                                                f'Дата доставки: <i>{info_order.date}</i>\n'
-                                                f'Время доставки: <i>{info_order.time}</i>\n'
-                                                f'Количество топлива: <i>{info_order.volume} литров</i>\n'
-                                                f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
-                                           reply_markup=keyboard)
-                except:
-                    pass
-        await state.clear()
+        calendar = aiogram_calendar.SimpleCalendar(show_alerts=True)
+        calendar.set_dates_range(datetime(2015, 1, 1), datetime(2050, 12, 31))
+        # получаем текущую дату
+        current_date = datetime.now()
+        # преобразуем ее в строку
+        date1 = current_date.strftime('%d/%m/%Y')
+        # преобразуем дату в список
+        list_date1 = date1.split('/')
+        await callback.message.edit_text(
+            "Укажите желаемую дату доставки топлива",
+            reply_markup=await calendar.start_calendar(year=int(list_date1[2]), month=int(list_date1[1]))
+        )
+        await state.set_state(OrderRepeat.date_state)
+        # order_data = {"tg_id": callback.from_user.id,
+        #               "payer": data['payer_order'] if data.get('payer_order') else info_order.payer,
+        #               "inn": data['inn_order'] if data.get('inn_order') else info_order.inn,
+        #               "address": data['address_order'] if data.get('address_order') else info_order.address,
+        #               "contact": data['contact_order'] if data.get('contact_order') else info_order.contact,
+        #               "date": data['date_order'] if data.get('date_order') else info_order.date,
+        #               "time": data['time_order'] if data.get('time_order') else info_order.time,
+        #               "volume": data['volume_order'] if data.get('volume_order') else info_order.volume,
+        #               "status": rq.OrderStatus.create,
+        #               "date_create": datetime.now().strftime('%d.%m.%Y %H:%M')}
+        # order_id: int = await rq.add_order(data=order_data)
+        # await state.update_data(order_id=order_id)
+        # list_users: list[User] = await rq.get_users_role(role=rq.UserRole.executor)
+        # if not list_users:
+        #     await callback.message.answer(text=f'Нет ВОДИТЕЛЕЙ для назначения их на заказ. Добавьте водителей.')
+        #     return
+        # keyboard = keyboards_executor_personal(list_users=list_users,
+        #                                        back=0,
+        #                                        forward=2,
+        #                                        count=6,
+        #                                        order_id=order_id)
+        # list_admins: list[User] = await rq.get_users_role(role=rq.UserRole.admin)
+        # admins_tg_id: list[int] = [admin.tg_id for admin in list_admins]
+        # info_order: Order = await rq.get_order_id(order_id=order_id)
+        # if callback.from_user.id in admins_tg_id:
+        #     await callback.message.answer(text=f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}'
+        #                                        f'Плательщик: <i>{info_order.payer}</i>\n'
+        #                                        f'ИНН: <i>{info_order.inn}</i>\n'
+        #                                        f'Адрес: <i>{info_order.address}</i>\n'
+        #                                        f'Контактное лицо: <i>{info_order.contact}</i>\n'
+        #                                        f'Дата доставки: <i>{info_order.date}</i>\n'
+        #                                        f'Время доставки: <i>{info_order.time}</i>\n'
+        #                                        f'Количество топлива: <i>{info_order.volume} литров</i>\n',
+        #                                   reply_markup=keyboard)
+        # else:
+        #     await callback.message.edit_text(text=f'Заказ № {order_id} создан и передан администратору. '
+        #                                           f'О смене статуса заказа мы вас оповестим')
+        #     admins: list[User] = await rq.get_users_role(role=rq.UserRole.admin)
+        #     for chat_id in admins:
+        #         try:
+        #             await bot.send_message(chat_id=chat_id.tg_id,
+        #                                    text=f'Заказ № {order_id} создан партнером'
+        #                                         f' <a href="tg://user?id={callback.from_user.id}">'
+        #                                         f'{callback.from_user.username}</a>\n\n'
+        #                                         f'Плательщик: <i>{info_order.payer}</i>\n'
+        #                                         f'ИНН: <i>{info_order.inn}</i>\n'
+        #                                         f'Адрес: <i>{info_order.address}</i>\n'
+        #                                         f'Контактное лицо: <i>{info_order.contact}</i>\n'
+        #                                         f'Дата доставки: <i>{info_order.date}</i>\n'
+        #                                         f'Время доставки: <i>{info_order.time}</i>\n'
+        #                                         f'Количество топлива: <i>{info_order.volume} литров</i>\n'
+        #                                         f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
+        #                                    reply_markup=keyboard)
+        #         except:
+        #             pass
+        # await state.clear()
     else:
         await callback.message.edit_text(text=f"Плательщик: <i>"
                                               f"{data['payer_order'] if data.get('payer_order') else info_order.payer}"
@@ -705,13 +724,17 @@ async def process_simple_calendar(callback: CallbackQuery,
     selected, date_select = await calendar.process_selection(callback, callback_data)
     if selected:
         current_date = datetime.now()
-        if current_date < date_select:
+        date_select = date_select + timedelta(hours=14)
+        if current_date.day <= date_select.day and current_date.hour < date_select.hour:
             date_order = date_select.strftime("%d.%m.%Y")
             await state.update_data(date_order=date_order)
             await state.set_state(state=None)
             await main_change(state=state, message=callback.message)
         else:
-            await callback.answer(text='В прошлое не доставляем, выберите корректную дату', show_alert=True)
+            if current_date.day == date_select.day:
+                await callback.answer(text='В день доставки заявку можно оставить до 14 часов', show_alert=True)
+            else:
+                await callback.answer(text='В прошлое не доставляем, выберите корректную дату', show_alert=True)
             calendar = aiogram_calendar.SimpleCalendar(show_alerts=True)
             calendar.set_dates_range(datetime(2015, 1, 1), datetime(2050, 12, 31))
             # получаем текущую дату
@@ -778,3 +801,164 @@ async def get_time_state(message: Message, state: FSMContext, bot: Bot) -> None:
     await state.update_data(time_order=time_order)
     await state.set_state(state=None)
     await main_change(state=state, message=message)
+
+
+@router.callback_query(aiogram_calendar.SimpleCalendarCallback.filter(), StateFilter(OrderRepeat.date_state))
+async def process_simple_calendar(callback: CallbackQuery,
+                                  callback_data: CallbackData,
+                                  state: FSMContext):
+    calendar = aiogram_calendar.SimpleCalendar(show_alerts=True)
+    calendar.set_dates_range(datetime(2022, 1, 1), datetime(2030, 12, 31))
+    selected, date_select = await calendar.process_selection(callback, callback_data)
+    if selected:
+        current_date = datetime.now()
+        date_select = date_select + timedelta(hours=14)
+        if current_date.day <= date_select.day and current_date.hour < date_select.hour:
+            date_order = date_select.strftime("%d.%m.%Y")
+            await state.update_data(date_order=date_order)
+            await state.set_state(state=None)
+            await callback.message.edit_text(text='Выберите удобный временной интервал для доставки',
+                                             reply_markup=keyboard_time_interval_r())
+        else:
+            if current_date.day == date_select.day:
+                await callback.answer(text='В день доставки заявку можно оставить до 14 часов', show_alert=True)
+            else:
+                await callback.answer(text='В прошлое не доставляем, выберите корректную дату', show_alert=True)
+            calendar = aiogram_calendar.SimpleCalendar(show_alerts=True)
+            calendar.set_dates_range(datetime(2015, 1, 1), datetime(2050, 12, 31))
+            # получаем текущую дату
+            current_date = datetime.now()
+            # преобразуем ее в строку
+            date1 = current_date.strftime('%d/%m/%Y')
+            # преобразуем дату в список
+            list_date1 = date1.split('/')
+            await callback.message.answer(
+                "Укажите желаемую дату доставки топлива",
+                reply_markup=await calendar.start_calendar(year=int(list_date1[2]), month=int(list_date1[1]))
+            )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith('rchangetimeinterval_'))
+@error_handler
+async def select_time_order_r(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
+    """
+    Получаем время доставки
+    :param callback:
+    :param state:
+    :param bot:
+    :return:
+    """
+    logging.info(f'select_time_order_r: {callback.from_user.id}')
+    time_order = callback.data.split('_')[-1]
+    if time_order != 'other':
+        await state.update_data(time_order=time_order)
+        await state.set_state(state=None)
+        data = await state.get_data()
+        info_order: Order = await rq.get_order_id(data['order_id'])
+        await callback.message.edit_text(text='Пришлите количество топлива')
+        await state.set_state(OrderRepeat.volume_state)
+        # await orderrepeat_confirm(callback=callback, state=state, bot=bot, data=data, info_order=info_order)
+    else:
+        await callback.message.edit_text(text='Укажите удобный временной интервал для доставки')
+        await state.set_state(OrderRepeat.time_state)
+
+
+@router.message(F.text, StateFilter(OrderRepeat.time_state))
+@error_handler
+async def get_time_state_r(message: Message, state: FSMContext, bot: Bot) -> None:
+    """
+    Получаем желаемое время доставки
+    :param message:
+    :param state:
+    :param bot:
+    :return:
+    """
+    logging.info(f'get_time_state_r: {message.from_user.id}')
+    time_order = message.text
+    await state.update_data(time_order=time_order)
+    await state.set_state(state=None)
+    await message.edit_text(text='Пришлите количество топлива')
+    await state.set_state(OrderRepeat.volume_state)
+
+
+@router.message(F.text, StateFilter(OrderRepeat.volume_state))
+@error_handler
+async def get_volume_order_r(message: Message, state: FSMContext, bot: Bot) -> None:
+    """
+    Получаем количество топлива для доставки
+    :param message:
+    :param state:
+    :param bot:
+    :return:
+    """
+    logging.info(f'get_volume_order: {message.from_user.id}')
+    volume = message.text
+    if not validate_volume(volume):
+        await message.answer(text='Некорректно указано количество топлива, значение должно быть числом > 0')
+    else:
+        volume_order = message.text
+        await state.update_data(volume_order=volume_order)
+        await state.set_state(state=None)
+        data = await state.get_data()
+        info_order: Order = await rq.get_order_id(data['order_id'])
+        await orderrepeat_confirm(message=message, state=state, bot=bot, data=data, info_order=info_order)
+
+
+async def orderrepeat_confirm(message: Message, state: FSMContext, bot: Bot, data: dict, info_order: Order):
+    order_data = {"tg_id": message.from_user.id,
+                  "payer": data['payer_order'] if data.get('payer_order') else info_order.payer,
+                  "inn": data['inn_order'] if data.get('inn_order') else info_order.inn,
+                  "address": data['address_order'] if data.get('address_order') else info_order.address,
+                  "contact": data['contact_order'] if data.get('contact_order') else info_order.contact,
+                  "date": data['date_order'] if data.get('date_order') else info_order.date,
+                  "time": data['time_order'] if data.get('time_order') else info_order.time,
+                  "volume": data['volume_order'] if data.get('volume_order') else info_order.volume,
+                  "status": rq.OrderStatus.create,
+                  "date_create": datetime.now().strftime('%d.%m.%Y %H:%M')}
+    order_id: int = await rq.add_order(data=order_data)
+    await state.update_data(order_id=order_id)
+    list_users: list[User] = await rq.get_users_role(role=rq.UserRole.executor)
+    if not list_users:
+        await message.answer(text=f'Нет ВОДИТЕЛЕЙ для назначения их на заказ. Добавьте водителей.')
+        return
+    keyboard = keyboards_executor_personal(list_users=list_users,
+                                           back=0,
+                                           forward=2,
+                                           count=6,
+                                           order_id=order_id)
+    list_admins: list[User] = await rq.get_users_role(role=rq.UserRole.admin)
+    admins_tg_id: list[int] = [admin.tg_id for admin in list_admins]
+    info_order: Order = await rq.get_order_id(order_id=order_id)
+    if message.from_user.id in admins_tg_id:
+        await message.answer(text=f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}'
+                                  f'Плательщик: <i>{info_order.payer}</i>\n'
+                                  f'ИНН: <i>{info_order.inn}</i>\n'
+                                  f'Адрес: <i>{info_order.address}</i>\n'
+                                  f'Контактное лицо: <i>{info_order.contact}</i>\n'
+                                  f'Дата доставки: <i>{info_order.date}</i>\n'
+                                  f'Время доставки: <i>{info_order.time}</i>\n'
+                                  f'Количество топлива: <i>{info_order.volume} литров</i>\n',
+                             reply_markup=keyboard)
+    else:
+        await message.answer(text=f'Заказ № {order_id} создан и передан администратору. '
+                                  f'О смене статуса заказа мы вас оповестим')
+        admins: list[User] = await rq.get_users_role(role=rq.UserRole.admin)
+        for chat_id in admins:
+            try:
+                await bot.send_message(chat_id=chat_id.tg_id,
+                                       text=f'Заказ № {order_id} создан партнером'
+                                            f' <a href="tg://user?id={message.from_user.id}">'
+                                            f'{message.from_user.username}</a>\n\n'
+                                            f'Плательщик: <i>{info_order.payer}</i>\n'
+                                            f'ИНН: <i>{info_order.inn}</i>\n'
+                                            f'Адрес: <i>{info_order.address}</i>\n'
+                                            f'Контактное лицо: <i>{info_order.contact}</i>\n'
+                                            f'Дата доставки: <i>{info_order.date}</i>\n'
+                                            f'Время доставки: <i>{info_order.time}</i>\n'
+                                            f'Количество топлива: <i>{info_order.volume} литров</i>\n'
+                                            f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
+                                       reply_markup=keyboard)
+            except:
+                pass
+    await state.clear()

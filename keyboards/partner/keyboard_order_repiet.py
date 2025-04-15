@@ -140,3 +140,24 @@ def keyboard_time_interval() -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1, button_2], [button_3, button_4], [button_5]])
 
     return keyboard
+
+
+def keyboard_time_interval_r() -> InlineKeyboardMarkup:
+    """
+    Список временных интервалов доставки
+    :return:
+    """
+    logging.info(f'keyboards_payer')
+    button_1 = InlineKeyboardButton(text='8.00-11.00',
+                                    callback_data=f'rchangetimeinterval_8.00-11.00')
+    button_2 = InlineKeyboardButton(text='11.00-14.00',
+                                    callback_data=f'rchangetimeinterval_11.00-14.00')
+    button_3 = InlineKeyboardButton(text='14.00-17.00',
+                                    callback_data=f'rchangetimeinterval_14.00-17.00')
+    button_4 = InlineKeyboardButton(text='17.00-19.00',
+                                    callback_data=f'rchangetimeinterval_17.00-19.00')
+    button_5 = InlineKeyboardButton(text='Другое',
+                                    callback_data=f'rchangetimeinterval_other')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1, button_2], [button_3, button_4], [button_5]])
+
+    return keyboard
