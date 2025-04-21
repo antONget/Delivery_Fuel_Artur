@@ -36,6 +36,8 @@ def keyboards_select_item_one(list_item: list[Order], block: int, type_order: st
                                          callback_data=f'itemselect_select_{str(list_item[block].id)}')
     button_cancel = InlineKeyboardButton(text='Отказаться',
                                          callback_data=f'itemselect_cancel_{str(list_item[block].id)}')
+    button_change_receipt = InlineKeyboardButton(text='Заменить фото квитанции',
+                                                 callback_data=f'itemselect_changereciept_{str(list_item[block].id)}')
     button_back = InlineKeyboardButton(text='<<<<',
                                        callback_data=f'itemselect_minus_{str(block)}')
     button_count = InlineKeyboardButton(text=f'{block+1}/{count_item}',
@@ -43,7 +45,8 @@ def keyboards_select_item_one(list_item: list[Order], block: int, type_order: st
     button_next = InlineKeyboardButton(text='>>>>',
                                        callback_data=f'itemselect_plus_{str(block)}')
     if type_order == 'completed':
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_back, button_count, button_next]])
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_change_receipt],
+                                                         [button_back, button_count, button_next]])
     else:
         keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_select, button_cancel],
                                                          [button_back, button_count, button_next]])
@@ -73,5 +76,16 @@ def keyboard_pass_comment() -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1]],)
     return keyboard
 
+
+def keyboard_cancel_change_receipt() -> InlineKeyboardMarkup:
+    """
+    Клавиатура для отмены замены фотографии квитанции
+    :return:
+    """
+    logging.info("keyboard_cancel_change_receipt")
+    button_1 = InlineKeyboardButton(text=f'Отменить',
+                                    callback_data=f'cancel_change_receipt')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1]],)
+    return keyboard
 
 

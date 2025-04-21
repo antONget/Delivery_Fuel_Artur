@@ -7,11 +7,12 @@ from filter.user_filter import IsRoleExecutor, IsRoleAdmin
 from keyboards.user import keyboard_select_order as kb
 from keyboards.partner.keyboard_order import keyboards_executor_personal
 from utils.error_handling import error_handler
-from utils.send_admins import send_message_admins_text, send_message_admins_media_group
+from utils.send_admins import send_message_admins_text, send_message_admins_media_group, \
+    send_message_admins_media_group_save_message
 
 from datetime import datetime
 from database import requests as rq
-from database.models import Order, User
+from database.models import Order, User, OrderReceipt
 from config_data.config import Config, load_config
 from filter.filter import validate_volume
 import logging
@@ -25,6 +26,7 @@ class StateReport(StatesGroup):
     photo_report = State()
     photo_counter = State()
     comment_cancel = State()
+    change_receipt = State()
 
 
 # календарь
@@ -131,6 +133,7 @@ async def select_type_order(callback: CallbackQuery, state: FSMContext, bot: Bot
             await state.set_state(StateReport.text_report)
             await callback.answer()
             return
+
         elif type_select == 'cancel' and type_order == 'work':
             # order_id: str = callback.data.split('_')[-1]
             await state.update_data(order_id=order_id)
@@ -179,6 +182,23 @@ async def select_type_order(callback: CallbackQuery, state: FSMContext, bot: Bot
         else:
             await callback.message.edit_text(text='Нет заявок в работе')
     if type_order == 'completed':
+        print(block)
+        if type_select == 'changereciept':
+            order_id = int(callback.data.split('_')[-1])
+            list_mailing: list[OrderReceipt] = await rq.get_order_receipt(order_id=order_id)
+            if not list_mailing:
+                await callback.answer(text='Для этого заказа нет возможно произвести замену фотографии квитанции',
+                                      show_alert=True)
+                return
+            info_order: Order = await rq.get_order_id(order_id=order_id)
+            await state.update_data(order_id=order_id)
+            await callback.message.delete()
+            await callback.message.answer_photo(photo=info_order.photo_ids_report,
+                                                caption='Пришлите новую фотографию квитанции если хотите ее заменить,'
+                                                        ' или нажмите "Отменить"',
+                                                reply_markup=kb.keyboard_cancel_change_receipt())
+            await state.set_state(StateReport.change_receipt)
+            return
         orders: list[Order] = await rq.get_orders_tg_id_status(tg_id_executor=callback.from_user.id,
                                                                status=rq.OrderStatus.completed)
         if orders:
@@ -266,7 +286,7 @@ async def get_text_order(message: Message, state: FSMContext, bot: Bot) -> None:
 @error_handler
 async def send_report(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
     """
-    Изменение данных
+    Подтверждение отправки квитанции о выполненном заказе
     :param callback:
     :param state:
     :param bot:
@@ -289,11 +309,13 @@ async def send_report(callback: CallbackQuery, state: FSMContext, bot: Bot) -> N
                               text_order=data['text_report'])
     info_order: Order = await rq.get_order_id(order_id=int(order_id))
 
-    await send_message_admins_media_group(bot=bot,
-                                          list_ids=[info_order.photo_ids_report],
-                                          caption=f'Отчет о выполнении заявки № {order_id} от  '
-                                                  f'@{callback.from_user.username}'
-                                                  f' получен. Отгружено {info_order.text_report} литров топлива')
+    await send_message_admins_media_group_save_message(bot=bot,
+                                                       list_ids=[info_order.photo_ids_report],
+                                                       caption=f'Отчет о выполнении заявки № {order_id} от  '
+                                                               f'@{callback.from_user.username}'
+                                                               f' получен. Отгружено {info_order.text_report} '
+                                                               f'литров топлива',
+                                                       order_id=order_id)
     await bot.send_photo(chat_id=-1002691975634,
                          photo=info_order.photo_ids_report,
                          caption=f'Отчет о выполнении заявки № {order_id} от  '
@@ -301,11 +323,14 @@ async def send_report(callback: CallbackQuery, state: FSMContext, bot: Bot) -> N
                                  f' получен. Отгружено {info_order.text_report} литров топлива',
                          message_thread_id=2)
     if str(info_order.tg_id) not in config.tg_bot.admin_ids.split(','):
-        await bot.send_photo(chat_id=info_order.tg_id,
-                             photo=info_order.photo_ids_report,
-                             caption=f'Отчет о выполнении заявки № {order_id} от  '
-                                     f'@{callback.from_user.username}'
-                                     f' получен. Отгружено {info_order.text_report} литров топлива')
+        msg: Message = await bot.send_photo(chat_id=info_order.tg_id,
+                                            photo=info_order.photo_ids_report,
+                                            caption=f'Отчет о выполнении заявки № {order_id} от  '
+                                                    f'@{callback.from_user.username}'
+                                                    f' получен. Отгружено {info_order.text_report} литров топлива')
+        await rq.add_order_receipt(data={"order_id": order_id,
+                                         "receipt_chat_id": info_order.tg_id,
+                                         "receipt_message_id": msg.message_id})
     await callback.answer()
 
 
@@ -388,3 +413,52 @@ async def pass_comment(callback: CallbackQuery, state: FSMContext, bot: Bot) -> 
                                         f'Количество топлива: <i>{info_order.volume} литров</i>\n',
                                    keyboard=keyboard)
     await callback.answer()
+
+
+@router.callback_query(F.data == 'cancel_change_receipt')
+@error_handler
+async def cancel_change_receipt(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
+    """
+    Пропуск добавления комментария
+    :param callback:
+    :param state:
+    :param bot:
+    :return:
+    """
+    logging.info(f'cancel_change_receipt: {callback.from_user.id} ')
+    await state.set_state(state=None)
+    await process_buttons_order(message=callback.message, state=state)
+
+
+@router.message(F.photo, StateFilter(StateReport.change_receipt))
+@error_handler
+async def get_change_receipt(message: Message, state: FSMContext, bot: Bot) -> None:
+    """
+    Получение новой фотографии для квитанции
+    :param message:
+    :param state:
+    :param bot:
+    :return:
+    """
+    logging.info(f'get_change_receipt: {message.from_user.id}')
+    photo_receipt = message.photo[-1].file_id
+    data = await state.get_data()
+    order_id = data.get('order_id')
+    info_order: Order = await rq.get_order_id(order_id=order_id)
+    info_mailing_receipt: list[OrderReceipt] = await rq.get_order_receipt(order_id=order_id)
+    await rq.set_order_report(order_id=int(order_id),
+                              photo_ids_report=photo_receipt,
+                              text_order=info_order.text_report)
+    if info_mailing_receipt:
+        for receipt in info_mailing_receipt:
+            try:
+                await bot.edit_message_media(chat_id=receipt.receipt_chat_id,
+                                             message_id=receipt.receipt_message_id,
+                                             media=InputMediaPhoto(media=photo_receipt,
+                                                                   caption=f'Отчет о выполнении заявки № {order_id} от  '
+                                                                           f'@{message.from_user.username}'
+                                                                           f' изменен. Отгружено {info_order.text_report} '
+                                                                           f'литров топлива'))
+            except:
+                pass
+    await message.answer(text='Квитанция обновлена')

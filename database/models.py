@@ -47,6 +47,14 @@ class Token(Base):
     tg_id: Mapped[int] = mapped_column(BigInteger, default=0)
 
 
+class OrderReceipt(Base):
+    __tablename__ = 'order_reports'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    order_id: Mapped[int] = mapped_column(Integer)
+    receipt_chat_id: Mapped[int] = mapped_column(Integer)
+    receipt_message_id: Mapped[int] = mapped_column(Integer)
+
+
 async def async_main():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

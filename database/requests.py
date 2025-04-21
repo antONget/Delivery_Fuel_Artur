@@ -1,4 +1,4 @@
-from database.models import User, Order, async_session, Token
+from database.models import User, Order, async_session, Token, OrderReceipt
 from sqlalchemy import select, or_, and_, distinct
 import logging
 from dataclasses import dataclass
@@ -502,3 +502,32 @@ async def get_token(token: str, tg_id: int) -> bool | str:
             return role
         else:
             return False
+
+
+""" ORDER_RECEIPT """
+
+
+async def add_order_receipt(data: dict) -> None:
+    """
+    Добавление информации о квитанции
+    :param data:
+    :return:
+    """
+    logging.info(f'add_order_receipt')
+    async with async_session() as session:
+        new_order_receipt = OrderReceipt(**data)
+        session.add(new_order_receipt)
+        await session.commit()
+
+
+async def get_order_receipt(order_id: int) -> list[OrderReceipt]:
+    """
+    Получение списка пользователей получивших фотографию квитанции по заказу
+    :param order_id:
+    :return:
+    """
+    logging.info(f'add_order_receipt')
+    async with async_session() as session:
+        order_receipts = await session.scalars(select(OrderReceipt).filter(OrderReceipt.order_id == order_id))
+        list_mailing = [order for order in order_receipts]
+        return list_mailing
