@@ -248,6 +248,11 @@ async def get_text_order(message: Message, state: FSMContext, bot: Bot) -> None:
                                                   caption=f'Показания счетчика по заказу № {data["order_id"]} от  '
                                                           f'@{message.from_user.username}')
             await message.answer(text='Показания счетчика направлены администратору')
+            await bot.send_photo(chat_id=-1002691975634,
+                                 photo=photo_id,
+                                 caption=f'Показания счетчика по заказу № {data["order_id"]} от  '
+                                         f'@{message.from_user.username}',
+                                 message_thread_id=2)
             return
         await state.update_data(photo_report=photo_id)
         await message.answer_photo(photo=photo_id,
@@ -289,6 +294,12 @@ async def send_report(callback: CallbackQuery, state: FSMContext, bot: Bot) -> N
                                           caption=f'Отчет о выполнении заявки № {order_id} от  '
                                                   f'@{callback.from_user.username}'
                                                   f' получен. Отгружено {info_order.text_report} литров топлива')
+    await bot.send_photo(chat_id=-1002691975634,
+                         photo=info_order.photo_ids_report,
+                         caption=f'Отчет о выполнении заявки № {order_id} от  '
+                                 f'@{callback.from_user.username}'
+                                 f' получен. Отгружено {info_order.text_report} литров топлива',
+                         message_thread_id=2)
     if str(info_order.tg_id) not in config.tg_bot.admin_ids.split(','):
         await bot.send_photo(chat_id=info_order.tg_id,
                              photo=info_order.photo_ids_report,

@@ -959,6 +959,19 @@ async def orderrepeat_confirm(message: Message, state: FSMContext, bot: Bot, dat
                                             f'Количество топлива: <i>{info_order.volume} литров</i>\n'
                                             f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
                                        reply_markup=keyboard)
+                await bot.send_message(chat_id=-1002691975634,
+                                       text=f'Заказ № {order_id} создан партнером'
+                                            f' <a href="tg://user?id={message.from_user.id}">'
+                                            f'{message.from_user.username}</a>\n\n'
+                                            f'Плательщик: <i>{info_order.payer}</i>\n'
+                                            f'ИНН: <i>{info_order.inn}</i>\n'
+                                            f'Адрес: <i>{info_order.address}</i>\n'
+                                            f'Контактное лицо: <i>{info_order.contact}</i>\n'
+                                            f'Дата доставки: <i>{info_order.date}</i>\n'
+                                            f'Время доставки: <i>{info_order.time}</i>\n'
+                                            f'Количество топлива: <i>{info_order.volume} литров</i>\n'
+                                            f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
+                                       message_thread_id=4)
             except:
                 pass
     await state.clear()
