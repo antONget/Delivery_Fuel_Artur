@@ -241,7 +241,10 @@ async def select_type_order(callback: CallbackQuery, state: FSMContext, bot: Bot
 @error_handler
 async def get_text_order(message: Message, state: FSMContext, bot: Bot) -> None:
     """
-    Изменение данных
+    Получаем отчет от водителя:
+    1) количество отгруженного топлива
+    2) фотография квитанции
+    3) фотография счетчика топлива
     :param message:
     :param state:
     :param bot:
@@ -262,11 +265,12 @@ async def get_text_order(message: Message, state: FSMContext, bot: Bot) -> None:
         data = await state.get_data()
         photo_id = message.photo[-1].file_id
         state_ = await state.get_state()
+        # получаем фотографию счетчика топлива
         if state_ == StateReport.photo_counter:
-            await send_message_admins_media_group(bot=bot,
-                                                  list_ids=[photo_id],
-                                                  caption=f'Показания счетчика по заказу № {data["order_id"]} от  '
-                                                          f'@{message.from_user.username}')
+            # await send_message_admins_media_group(bot=bot,
+            #                                       list_ids=[photo_id],
+            #                                       caption=f'Показания счетчика по заказу № {data["order_id"]} от  '
+            #                                               f'@{message.from_user.username}')
             await message.answer(text='Показания счетчика направлены администратору')
             await bot.send_photo(chat_id=-1002691975634,
                                  photo=photo_id,
@@ -274,6 +278,7 @@ async def get_text_order(message: Message, state: FSMContext, bot: Bot) -> None:
                                          f'@{message.from_user.username}',
                                  message_thread_id=2)
             return
+        # обработка фотографии квитанции
         await state.update_data(photo_report=photo_id)
         await message.answer_photo(photo=photo_id,
                                    caption=f'{data["text_report"]}\n\n'
@@ -309,19 +314,22 @@ async def send_report(callback: CallbackQuery, state: FSMContext, bot: Bot) -> N
                               text_order=data['text_report'])
     info_order: Order = await rq.get_order_id(order_id=int(order_id))
 
-    await send_message_admins_media_group_save_message(bot=bot,
-                                                       list_ids=[info_order.photo_ids_report],
-                                                       caption=f'Отчет о выполнении заявки № {order_id} от  '
-                                                               f'@{callback.from_user.username}'
-                                                               f' получен. Отгружено {info_order.text_report} '
-                                                               f'литров топлива',
-                                                       order_id=order_id)
-    await bot.send_photo(chat_id=-1002691975634,
-                         photo=info_order.photo_ids_report,
-                         caption=f'Отчет о выполнении заявки № {order_id} от  '
-                                 f'@{callback.from_user.username}'
-                                 f' получен. Отгружено {info_order.text_report} литров топлива',
-                         message_thread_id=2)
+    # await send_message_admins_media_group_save_message(bot=bot,
+    #                                                    list_ids=[info_order.photo_ids_report],
+    #                                                    caption=f'Отчет о выполнении заявки № {order_id} от  '
+    #                                                            f'@{callback.from_user.username}'
+    #                                                            f' получен. Отгружено {info_order.text_report} '
+    #                                                            f'литров топлива',
+    #                                                    order_id=order_id)
+    msg = await bot.send_photo(chat_id=-1002691975634,
+                               photo=info_order.photo_ids_report,
+                               caption=f'Отчет о выполнении заявки № {order_id} от  '
+                                       f'@{callback.from_user.username}'
+                                       f' получен. Отгружено {info_order.text_report} литров топлива',
+                               message_thread_id=2)
+    await rq.add_order_receipt(data={"order_id": order_id,
+                                     "receipt_chat_id": -1002691975634,
+                                     "receipt_message_id": msg.message_id})
     if str(info_order.tg_id) not in config.tg_bot.admin_ids.split(','):
         msg: Message = await bot.send_photo(chat_id=info_order.tg_id,
                                             photo=info_order.photo_ids_report,

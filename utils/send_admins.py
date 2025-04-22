@@ -78,10 +78,8 @@ async def send_message_admins_media_group_save_message(bot: Bot, list_ids: list,
         try:
             msg: list[Message] = await bot.send_media_group(chat_id=admin.tg_id,
                                                             media=media_group)
-            print('81')
             await add_order_receipt(data={"order_id": order_id,
                                           "receipt_chat_id": admin.tg_id,
                                           "receipt_message_id": msg[0].message_id})
-            print('84')
         except:
             pass
