@@ -18,8 +18,9 @@ from filter.filter import validate_inn, validate_russian_phone_number, validate_
 from utils.utils_keyboard import utils_handler_pagination_to_composite_text
 from filter.user_filter import check_role
 
+
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 config: Config = load_config()
 router = Router()
@@ -49,6 +50,13 @@ async def edit_order(callback: CallbackQuery, state: FSMContext, bot: Bot):
     if await check_role(tg_id=callback.from_user.id, role=rq.UserRole.admin):
         tg_id = None
     list_orders: list[Order] = await rq.get_create_orders_tg_id(tg_id_creator=tg_id)
+    list_orders_filters = []
+    current_date = datetime.now()
+    for order_item in list_orders:
+        order_data = datetime.strptime(order_item.date_create, '%d.%m.%Y %H:%M')
+        if order_data + timedelta(days=2) <= current_date:
+            list_orders_filters.append(order_item)
+    list_orders = list_orders_filters
     if list_orders:
         page = 0
         text_message = f'Выберите заказ для редактирования\n\n' \
@@ -90,6 +98,13 @@ async def process_ordereditlist_pagination(callback: CallbackQuery, state: FSMCo
     if await check_role(tg_id=callback.from_user.id, role=rq.UserRole.admin):
         tg_id = None
     list_orders: list[Order] = await rq.get_create_orders_tg_id(tg_id_creator=tg_id)
+    list_orders_filters = []
+    current_date = datetime.now()
+    for order_item in list_orders:
+        order_data = datetime.strptime(order_item.date_create, '%d.%m.%Y %H:%M')
+        if order_data + timedelta(days=2) <= current_date:
+            list_orders_filters.append(order_item)
+    list_orders = list_orders_filters
     max_page = len(list_orders)
     if action == 'next':
         page += 1

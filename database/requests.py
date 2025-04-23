@@ -1,4 +1,4 @@
-from database.models import User, Order, async_session, Token, OrderReceipt
+from database.models import User, Order, async_session, Token, OrderReceipt, OrderPartnerDelete, OrderAdminEdit
 from sqlalchemy import select, or_, and_, distinct
 import logging
 from dataclasses import dataclass
@@ -531,3 +531,104 @@ async def get_order_receipt(order_id: int) -> list[OrderReceipt]:
         order_receipts = await session.scalars(select(OrderReceipt).filter(OrderReceipt.order_id == order_id))
         list_mailing = [order for order in order_receipts]
         return list_mailing
+
+
+""" ORDER_PARTNER_DELETE """
+
+
+async def add_order_partner_delete(data: dict) -> None:
+    """
+    Добавление информации информационном сообщении о размещении заказа
+    :param data:
+    :return:
+    """
+    logging.info(f'add_order_partner_delete')
+    async with async_session() as session:
+        new_order_partner_delete = OrderPartnerDelete(**data)
+        session.add(new_order_partner_delete)
+        await session.commit()
+
+
+async def get_order_partner_delete(order_id: int) -> OrderPartnerDelete:
+    """
+    Получение списка сведкний об информационном сообщении размещения заказа
+    :param order_id:
+    :return:
+    """
+    logging.info(f'get_order_partner_delete')
+    async with async_session() as session:
+        return await session.scalar(select(OrderPartnerDelete).filter(OrderPartnerDelete.order_id == order_id))
+
+
+async def update_order_partner_delete(order_id: int, message_id: int) -> None:
+    """
+    Получение списка сведкний об информационном сообщении размещения заказа
+    :param order_id:
+    :return:
+    """
+    logging.info(f'get_order_partner_delete')
+    async with async_session() as session:
+        order_message = await session.scalar(select(OrderPartnerDelete).filter(OrderPartnerDelete.order_id == order_id))
+        if order_message:
+            order_message.message_id = message_id
+            await session.commit()
+
+
+async def delete_order_partner_delete(order_id: int) -> None:
+    """
+    Получение списка сведкний об информационном сообщении размещения заказа
+    :param order_id:
+    :return:
+    """
+    logging.info(f'get_order_partner_delete')
+    async with async_session() as session:
+        order_message = await session.scalar(select(OrderPartnerDelete).filter(OrderPartnerDelete.order_id == order_id))
+        if order_message:
+            await session.delete(order_message)
+            await session.commit()
+
+
+""" ORDER_ADMIN_EDIT """
+
+
+async def add_order_admin_edit(data: dict) -> None:
+    """
+    Добавление информации о сообщении с заказом
+    :param data:
+    :return:
+    """
+    logging.info(f'add_order_admin_edit')
+    async with async_session() as session:
+        new_order_admin_edit = OrderAdminEdit(**data)
+        session.add(new_order_admin_edit)
+        await session.commit()
+
+
+async def get_order_admin_edit(order_id: int) -> list[OrderAdminEdit]:
+    """
+    Получение списка отправленных сообщений с информацией о заказе
+    :param order_id:
+    :return:
+    """
+    logging.info(f'get_order_admin_edit')
+    async with async_session() as session:
+        order_message = await session.scalars(select(OrderAdminEdit).filter(OrderAdminEdit.order_id == order_id))
+        if order_message:
+            list_message = [info_message for info_message in order_message]
+            return list_message
+
+
+async def delete_order_admin_edit(order_id: int) -> None:
+    """
+    Получение списка отправленных сообщений с информацией о заказе
+    :param order_id:
+    :return:
+    """
+    logging.info(f'get_order_admin_edit')
+    async with async_session() as session:
+        order_message = await session.execute(select(OrderAdminEdit).filter(OrderAdminEdit.order_id == order_id))
+        order_message = order_message.scalars().all()
+        if order_message:
+            for order in order_message:
+                await session.delete(order)
+                await session.commit()
