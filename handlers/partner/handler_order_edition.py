@@ -739,56 +739,56 @@ async def orderedit_confirm(callback: CallbackQuery, state: FSMContext, bot: Bot
                                            forward=2,
                                            count=6,
                                            order_id=order_id)
-    if callback.from_user.id in admins_tg_id:
-        await callback.message.answer(text=f"Плательщик: <i>"
-                                           f"{data['payer_order'] if data.get('payer_order') else info_order.payer}"
-                                           f"</i>\n"
-                                           f"ИНН: <i>"
-                                           f"{data['inn_order'] if data.get('inn_order') else info_order.inn}"
-                                           f"</i>\n"
-                                           f"Адрес: <i>"
-                                           f"{data['address_order'] if data.get('address_order') else info_order.address}"
-                                           f"</i>\n"
-                                           f"Контактное лицо: <i>"
-                                           f"{data['contact_order'] if data.get('contact_order') else info_order.contact}</i>\n"
-                                           f"Дата доставки: <i>"
-                                           f"{data['date_order'] if data.get('date_order') else info_order.date}"
-                                           f"</i>\n"
-                                           f"Время доставки: <i>"
-                                           f"{data['time_order'] if data.get('time_order') else info_order.time}"
-                                           f"</i>\n"
-                                           f"Количество топлива: <i>"
-                                           f"{data['volume_order'] if data.get('volume_order') else info_order.volume}"
-                                           f" литров</i>\n",
-                                      reply_markup=keyboard)
-    else:
-        await callback.message.answer(text=f'Заказ № {order_id} создан и передан администратору. '
-                                           f'О смене статуса заказа мы вас оповестим')
-        admins: list[User] = await rq.get_users_role(role=rq.UserRole.admin)
-        for chat_id in admins:
-            try:
-                await bot.send_message(chat_id=chat_id.tg_id,
-                                       text=f"Плательщик: <i>"
-                                            f"{data['payer_order'] if data.get('payer_order') else info_order.payer}"
-                                            f"</i>\n"
-                                            f"ИНН: <i>"
-                                            f"{data['inn_order'] if data.get('inn_order') else info_order.inn}"
-                                            f"</i>\n"
-                                            f"Адрес: <i>"
-                                            f"{data['address_order'] if data.get('address_order') else info_order.address}"
-                                            f"</i>\n"
-                                            f"Контактное лицо: <i>"
-                                            f"{data['contact_order'] if data.get('contact_order') else info_order.contact}</i>\n"
-                                            f"Дата доставки: <i>"
-                                            f"{data['date_order'] if data.get('date_order') else info_order.date}"
-                                            f"</i>\n"
-                                            f"Время доставки: <i>"
-                                            f"{data['time_order'] if data.get('time_order') else info_order.time}"
-                                            f"</i>\n"
-                                            f"Количество топлива: <i>"
-                                            f"{data['volume_order'] if data.get('volume_order') else info_order.volume}"
-                                            f" литров</i>\n",
-                                       reply_markup=keyboard)
-            except:
-                pass
+    # if callback.from_user.id in admins_tg_id:
+    #     await callback.message.answer(text=f"Плательщик: <i>"
+    #                                        f"{data['payer_order'] if data.get('payer_order') else info_order.payer}"
+    #                                        f"</i>\n"
+    #                                        f"ИНН: <i>"
+    #                                        f"{data['inn_order'] if data.get('inn_order') else info_order.inn}"
+    #                                        f"</i>\n"
+    #                                        f"Адрес: <i>"
+    #                                        f"{data['address_order'] if data.get('address_order') else info_order.address}"
+    #                                        f"</i>\n"
+    #                                        f"Контактное лицо: <i>"
+    #                                        f"{data['contact_order'] if data.get('contact_order') else info_order.contact}</i>\n"
+    #                                        f"Дата доставки: <i>"
+    #                                        f"{data['date_order'] if data.get('date_order') else info_order.date}"
+    #                                        f"</i>\n"
+    #                                        f"Время доставки: <i>"
+    #                                        f"{data['time_order'] if data.get('time_order') else info_order.time}"
+    #                                        f"</i>\n"
+    #                                        f"Количество топлива: <i>"
+    #                                        f"{data['volume_order'] if data.get('volume_order') else info_order.volume}"
+    #                                        f" литров</i>\n",
+    #                                   reply_markup=keyboard)
+    # else:
+    await callback.message.answer(text=f'Заказ № {order_id} создан и передан администратору. '
+                                       f'О смене статуса заказа мы вас оповестим')
+    admins: list[User] = await rq.get_users_role(role=rq.UserRole.admin)
+    for chat_id in admins:
+        try:
+            await bot.send_message(chat_id=chat_id.tg_id,
+                                   text=f"Плательщик: <i>"
+                                        f"{data['payer_order'] if data.get('payer_order') else info_order.payer}"
+                                        f"</i>\n"
+                                        f"ИНН: <i>"
+                                        f"{data['inn_order'] if data.get('inn_order') else info_order.inn}"
+                                        f"</i>\n"
+                                        f"Адрес: <i>"
+                                        f"{data['address_order'] if data.get('address_order') else info_order.address}"
+                                        f"</i>\n"
+                                        f"Контактное лицо: <i>"
+                                        f"{data['contact_order'] if data.get('contact_order') else info_order.contact}</i>\n"
+                                        f"Дата доставки: <i>"
+                                        f"{data['date_order'] if data.get('date_order') else info_order.date}"
+                                        f"</i>\n"
+                                        f"Время доставки: <i>"
+                                        f"{data['time_order'] if data.get('time_order') else info_order.time}"
+                                        f"</i>\n"
+                                        f"Количество топлива: <i>"
+                                        f"{data['volume_order'] if data.get('volume_order') else info_order.volume}"
+                                        f" литров</i>\n",
+                                   reply_markup=keyboard)
+        except:
+            pass
     await state.clear()

@@ -55,6 +55,22 @@ class OrderReceipt(Base):
     receipt_message_id: Mapped[int] = mapped_column(Integer)
 
 
+class OrderPartnerDelete(Base):
+    __tablename__ = 'order_partner_delete'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    order_id: Mapped[int] = mapped_column(Integer)
+    partner_tg_id: Mapped[int] = mapped_column(Integer)
+    message_id: Mapped[int] = mapped_column(Integer)
+
+
+class OrderAdminEdit(Base):
+    __tablename__ = 'order_admin_edit'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    order_id: Mapped[int] = mapped_column(Integer)
+    chat_id: Mapped[int] = mapped_column(Integer)
+    message_id: Mapped[int] = mapped_column(Integer)
+
+
 async def async_main():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

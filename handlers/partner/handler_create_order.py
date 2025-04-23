@@ -458,17 +458,19 @@ async def get_volume_order(message: Message, state: FSMContext, bot: Bot) -> Non
     """
     logging.info(f'get_volume_order: {message.from_user.id}')
     volume = message.text
+    # валидация полученного значения количества топлива
     if not validate_volume(volume):
         await message.answer(text='Некорректно указано количество топлива, значение должно быть числом > 0')
     else:
         await state.set_state(state=None)
         volume_order = message.text
         await state.update_data(volume_order=volume_order)
-
+        # получаем список пользователей с ролью ВОДИТЕЛЬ
         list_users: list[User] = await rq.get_users_role(role=rq.UserRole.executor)
         if not list_users:
             await message.answer(text=f'Нет ВОДИТЕЛЕЙ для назначения их на заказ. Добавьте водителей.')
             return
+        # добавляем заказ в БД
         data = await state.get_data()
         order_data = {"tg_id": message.from_user.id,
                       "payer": data['payer_order'],
@@ -482,6 +484,7 @@ async def get_volume_order(message: Message, state: FSMContext, bot: Bot) -> Non
                       "date_create": datetime.now().strftime('%d.%m.%Y %H:%M')}
         order_id: int = await rq.add_order(data=order_data)
         await state.update_data(order_id=order_id)
+        # клавиатура для вывода списка ВОДИТЕЛЕЙ
         keyboard = kb.keyboards_executor_personal(list_users=list_users,
                                                   back=0,
                                                   forward=2,
@@ -500,39 +503,52 @@ async def get_volume_order(message: Message, state: FSMContext, bot: Bot) -> Non
         #                               f'Количество топлива: <i>{data["volume_order"]} литров</i>\n',
         #                          reply_markup=keyboard)
         # else:
-        await message.answer(text=f'Заказ № {order_id} создан и передан администратору. '
-                                  f'О смене статуса заказа мы вас оповестим')
+        # отправляем информационное сообщение заказчику с кнопками УДАЛИТЬ и РЕДАКТИРОВАТЬ
+        msg = await message.answer(text=f'Заказ № {order_id} создан и передан администратору. '
+                                        f'О смене статуса заказа мы вас оповестим',
+                                   reply_markup=kb.keyboard_delete_partner(order_id=order_id))
+        # добавляем информацию о сообщении в БД для последующего редактирования
+        await rq.add_order_partner_delete(data={"order_id": order_id,
+                                                "partner_tg_id": message.from_user.id,
+                                                "message_id": msg.message_id})
+        # производим рассылку заказа админам для назначения водителя
         admins: list[User] = await rq.get_users_role(role=rq.UserRole.admin)
         for chat_id in admins:
             try:
-                await bot.send_message(chat_id=chat_id.tg_id,
-                                       text=f'Заказ № {order_id} создан партнером'
-                                            f' <a href="tg://user?id={message.from_user.id}">'
-                                            f'{message.from_user.username}</a>\n\n'
-                                            f'Плательщик: <i>{data["payer_order"]}</i>\n'
-                                            f'ИНН: <i>{data["inn_order"]}</i>\n'
-                                            f'Адрес: <i>{data["address_order"]}</i>\n'
-                                            f'Контактное лицо: <i>{data["contact_order"]}</i>\n'
-                                            f'Дата доставки: <i>{data["date_order"]}</i>\n'
-                                            f'Время доставки: <i>{data["time_order"]}</i>\n'
-                                            f'Количество топлива: <i>{data["volume_order"]} литров</i>\n'  
-                                            f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
-                                       reply_markup=keyboard)
+                msg_admin = await bot.send_message(chat_id=chat_id.tg_id,
+                                                   text=f'Заказ № {order_id} создан партнером'
+                                                        f' <a href="tg://user?id={message.from_user.id}">'
+                                                        f'{message.from_user.username}</a>\n\n'
+                                                        f'Плательщик: <i>{data["payer_order"]}</i>\n'
+                                                        f'ИНН: <i>{data["inn_order"]}</i>\n'
+                                                        f'Адрес: <i>{data["address_order"]}</i>\n'
+                                                        f'Контактное лицо: <i>{data["contact_order"]}</i>\n'
+                                                        f'Дата доставки: <i>{data["date_order"]}</i>\n'
+                                                        f'Время доставки: <i>{data["time_order"]}</i>\n'
+                                                        f'Количество топлива: <i>{data["volume_order"]} литров</i>\n'  
+                                                        f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
+                                                   reply_markup=keyboard)
+                await rq.add_order_admin_edit(data={"order_id": order_id,
+                                                    "chat_id": chat_id.tg_id,
+                                                    "message_id": msg_admin.message_id})
             except:
                 pass
-        await bot.send_message(chat_id=-1002691975634,
-                               text=f'Заказ № {order_id} создан партнером'
-                                    f' <a href="tg://user?id={message.from_user.id}">'
-                                    f'{message.from_user.username}</a>\n\n'
-                                    f'Плательщик: <i>{data["payer_order"]}</i>\n'
-                                    f'ИНН: <i>{data["inn_order"]}</i>\n'
-                                    f'Адрес: <i>{data["address_order"]}</i>\n'
-                                    f'Контактное лицо: <i>{data["contact_order"]}</i>\n'
-                                    f'Дата доставки: <i>{data["date_order"]}</i>\n'
-                                    f'Время доставки: <i>{data["time_order"]}</i>\n'
-                                    f'Количество топлива: <i>{data["volume_order"]} литров</i>\n'
-                                    f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
-                               message_thread_id=4)
+        # отправка заказа в группу
+        msg_group = await bot.send_message(chat_id=-1002691975634,
+                                           text=f'Заказ № {order_id} создан партнером'
+                                                f' <a href="tg://user?id={message.from_user.id}">'
+                                                f'{message.from_user.username}</a>\n\n'
+                                                f'Плательщик: <i>{data["payer_order"]}</i>\n'
+                                                f'ИНН: <i>{data["inn_order"]}</i>\n'
+                                                f'Адрес: <i>{data["address_order"]}</i>\n'
+                                                f'Контактное лицо: <i>{data["contact_order"]}</i>\n'
+                                                f'Дата доставки: <i>{data["date_order"]}</i>\n'
+                                                f'Время доставки: <i>{data["time_order"]}</i>\n'
+                                                f'Количество топлива: <i>{data["volume_order"]} литров</i>',
+                                           message_thread_id=4)
+        await rq.add_order_admin_edit(data={"order_id": order_id,
+                                            "chat_id": -1002691975634,
+                                            "message_id": msg_group.message_id})
 #
 #
 # @router.callback_query(F.data.startswith('executor_select_forward_'))

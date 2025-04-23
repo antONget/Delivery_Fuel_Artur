@@ -36,7 +36,6 @@ def keyboards_executor_personal(list_users: list[User], back: int,
     :return:
     """
     logging.info(f'keyboards_executor_personal')
-    print(back, forward)
     # проверка чтобы не ушли в минус
     if back < 0:
         back = 0
@@ -60,6 +59,10 @@ def keyboards_executor_personal(list_users: list[User], back: int,
         buttons.append(InlineKeyboardButton(
             text=text,
             callback_data=button))
+    button_cancel = InlineKeyboardButton(text='Отменить заказ',
+                                         callback_data=f'returnorder_{order_id}')
+    button_edit = InlineKeyboardButton(text='Редактировать',
+                                       callback_data=f'selectedit_{order_id}')
     button_back = InlineKeyboardButton(text='<<<<',
                                        callback_data=f'executor_select_back_{order_id}_{str(back)}')
     button_count = InlineKeyboardButton(text=f'{back+1}',
@@ -68,9 +71,36 @@ def keyboards_executor_personal(list_users: list[User], back: int,
                                        callback_data=f'executor_select_forward_{order_id}_{str(forward)}')
 
     kb_builder.row(*buttons, width=1)
+    kb_builder.row(button_cancel, button_edit)
     kb_builder.row(button_back, button_count, button_next)
 
     return kb_builder.as_markup()
+
+
+def keyboard_delete_partner(order_id: int) -> InlineKeyboardMarkup:
+    """
+    Клавиатура для удаления/редактирования заказа
+    :return:
+    """
+    logging.info('keyboard_delete_partner')
+    button_1 = InlineKeyboardButton(text='Удалить',
+                                    callback_data=f'selectdelete_{order_id}')
+    button_2 = InlineKeyboardButton(text='Редактировать',
+                                    callback_data=f'selectedit_{order_id}')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2]])
+    return keyboard
+
+
+def keyboard_delete_message_partner(order_id: int) -> InlineKeyboardMarkup:
+    """
+    Клавиатура для удаления заказа
+    :return:
+    """
+    logging.info('keyboard_delete_partner')
+    button_1 = InlineKeyboardButton(text='Удалить',
+                                    callback_data=f'selectdelete_{order_id}')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1]])
+    return keyboard
 
 
 def keyboard_confirm_select_executor() -> InlineKeyboardMarkup:

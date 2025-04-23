@@ -12,7 +12,7 @@ from utils.send_admins import send_message_admins_text, send_message_admins_medi
 
 from datetime import datetime
 from database import requests as rq
-from database.models import Order, User, OrderReceipt
+from database.models import Order, User, OrderReceipt, OrderPartnerDelete
 from config_data.config import Config, load_config
 from filter.filter import validate_volume
 import logging
@@ -330,6 +330,17 @@ async def send_report(callback: CallbackQuery, state: FSMContext, bot: Bot) -> N
     await rq.add_order_receipt(data={"order_id": order_id,
                                      "receipt_chat_id": -1002691975634,
                                      "receipt_message_id": msg.message_id})
+    # получаем информацию об отправленном сообщении заказчику
+    order_partner_delete: OrderPartnerDelete = await rq.get_order_partner_delete(order_id=order_id)
+    # если информация о сообщении есть
+    if order_partner_delete:
+        # удаляем клавиатуру (кнопку УДАЛИТЬ)
+        await bot.edit_message_reply_markup(chat_id=order_partner_delete.partner_tg_id,
+                                            message_id=order_partner_delete.message_id,
+                                            reply_markup=None)
+        # удаляем запись в БД о сообщении
+        await rq.delete_order_partner_delete(order_id=order_id)
+    # отправляем заказчику в личку квитанцию если он не является админом
     if str(info_order.tg_id) not in config.tg_bot.admin_ids.split(','):
         msg: Message = await bot.send_photo(chat_id=info_order.tg_id,
                                             photo=info_order.photo_ids_report,

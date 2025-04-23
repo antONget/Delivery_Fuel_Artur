@@ -191,7 +191,7 @@ async def process_executor_select(callback: CallbackQuery, state: FSMContext, bo
         await callback.message.edit_text(text=f'Заказ №{order_id} уже выполнен, исполнитель ВОДИТЕЛЬ '
                                               f'<a href="tg://user?id={info_order.executor}">{executor.username}</a>')
         return
-    # проверка что, водитель может быть назанчен на заказ (бот может отправить ему сообщение)
+    # проверка что, водитель может быть назначен на заказ (бот может отправить ему сообщение)
     try:
         await bot.send_chat_action(callback.from_user.id, 'typing')
     except:
@@ -290,17 +290,34 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
                                               f'Водитель <a href="tg://user?id={user_info.tg_id}">'
                                               f'{user_info.username}</a>')
         try:
-            await bot.send_message(chat_id=order_info.tg_id,
-                                   text=f'Заказ № {order_id} создан.\n\n'
-                                        f'Плательщик: <i>{order_info.payer}</i>\n'
-                                        f'ИНН: <i>{order_info.inn}</i>\n'
-                                        f'Адрес: <i>{order_info.address}</i>\n'
-                                        f'Контактное лицо: <i>{order_info.contact}</i>\n'
-                                        f'Дата доставки: <i>{order_info.date}</i>\n'
-                                        f'Время доставки: <i>{order_info.time}</i>\n'
-                                        f'Количество топлива: <i>{order_info.volume} литров</i>\n'  
-                                        f'Водитель <a href="tg://user?id={user_info.tg_id}">'
-                                        f'{user_info.username}</a>')
+            # await bot.send_message(chat_id=order_info.tg_id,
+            #                        text=f'Заказ № {order_id} создан.\n\n'
+            #                             f'Плательщик: <i>{order_info.payer}</i>\n'
+            #                             f'ИНН: <i>{order_info.inn}</i>\n'
+            #                             f'Адрес: <i>{order_info.address}</i>\n'
+            #                             f'Контактное лицо: <i>{order_info.contact}</i>\n'
+            #                             f'Дата доставки: <i>{order_info.date}</i>\n'
+            #                             f'Время доставки: <i>{order_info.time}</i>\n'
+            #                             f'Количество топлива: <i>{order_info.volume} литров</i>\n'
+            #                             f'Водитель <a href="tg://user?id={user_info.tg_id}">'
+            #                             f'{user_info.username}</a>')
+            info_message = await rq.get_order_partner_delete(order_id=order_id)
+            await bot.delete_message(chat_id=info_message.partner_tg_id,
+                                     message_id=info_message.message_id)
+            msg_partner = await bot.send_message(chat_id=order_info.tg_id,
+                                                 text=f'Заказ № {order_id} создан.\n\n'
+                                                      f'Плательщик: <i>{order_info.payer}</i>\n'
+                                                      f'ИНН: <i>{order_info.inn}</i>\n'
+                                                      f'Адрес: <i>{order_info.address}</i>\n'
+                                                      f'Контактное лицо: <i>{order_info.contact}</i>\n'
+                                                      f'Дата доставки: <i>{order_info.date}</i>\n'
+                                                      f'Время доставки: <i>{order_info.time}</i>\n'
+                                                      f'Количество топлива: <i>{order_info.volume} литров</i>\n'
+                                                      f'Водитель <a href="tg://user?id={user_info.tg_id}">'
+                                                      f'{user_info.username}</a>',
+                                                 reply_markup=kb.keyboard_delete_message_partner(order_id=order_id))
+            await rq.update_order_partner_delete(order_id=order_id,
+                                                 message_id=msg_partner.message_id)
         except:
             await callback.message.answer(text='Партнер не оповещен о назначении водителя на его заказ,'
                                                ' возможно он заблокировал бота')

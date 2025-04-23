@@ -9,7 +9,7 @@ from aiogram.filters.callback_data import CallbackData
 from keyboards.partner.keyboard_order_delete import keyboard_delete
 from keyboards.partner.keyboard_order import keyboards_executor_personal
 import database.requests as rq
-from database.models import User, Order
+from database.models import User, Order, OrderAdminEdit
 from utils.error_handling import error_handler
 from config_data.config import Config, load_config
 from filter.user_filter import IsRoleUser
@@ -165,6 +165,14 @@ async def process_deleteorder(callback: CallbackQuery, state: FSMContext, bot: B
     order_id = data['order_id']
     info_order = await rq.get_order_id(order_id=order_id)
     if action == 'confirm':
+        messages_order: list[OrderAdminEdit] = await rq.get_order_admin_edit(order_id=order_id)
+        for info_message in messages_order:
+            try:
+                await bot.delete_message(chat_id=info_message.chat_id,
+                                         message_id=info_message.message_id)
+            except:
+                pass
+        await rq.delete_order_admin_edit(order_id=order_id)
         await rq.delete_order(order_id=order_id)
         try:
             await callback.message.edit_text(text=f'Удаление заказа №{order_id} прошло успешно')
