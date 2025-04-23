@@ -632,3 +632,24 @@ async def delete_order_admin_edit(order_id: int) -> None:
             for order in order_message:
                 await session.delete(order)
                 await session.commit()
+
+
+async def update_order_admin_edit(order_id: int, message_id: int, chat_id: int) -> None:
+    """
+    Обновление информации о сообщениях отправленных админам для назначения водителей
+    :param order_id:
+    :param message_id:
+    :param chat_id:
+    :return:
+    """
+    logging.info(f'get_order_partner_delete')
+    async with async_session() as session:
+        order_message = await session.scalar(select(OrderAdminEdit).filter(OrderAdminEdit.order_id == order_id,
+                                                                           OrderAdminEdit.chat_id == chat_id))
+        if order_message:
+            order_message.message_id = message_id
+        else:
+            data = {"order_id": order_id, "message_id": message_id, "chat_id": chat_id}
+            new_order_admin_edit = OrderAdminEdit(**data)
+            session.add(new_order_admin_edit)
+        await session.commit()

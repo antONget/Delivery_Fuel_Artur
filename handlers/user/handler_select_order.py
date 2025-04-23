@@ -377,20 +377,27 @@ async def get_comment_cancel(message: Message, state: FSMContext, bot: Bot) -> N
                                            forward=2,
                                            count=6,
                                            order_id=order_id)
-    await send_message_admins_text(bot=bot,
-                                   text=f'@{message.from_user.username}'
-                                        f' отказался от выполнения заказа № {order_id},'
-                                        f' комментарий: {comment_cancel}\n'
-                                        f'Информация о заказе № {order_id}:\n'
-                                        f'Заказчик: <a href="tg://user?id={info_order.tg_id}">{info_user.username}</a>\n' 
-                                        f'Плательщик: <i>{info_order.payer}</i>\n' 
-                                        f'ИНН: <i>{info_order.inn}</i>\n' 
-                                        f'Адрес: <i>{info_order.address}</i>\n' 
-                                        f'Контактное лицо: <i>{info_order.contact}</i>\n' 
-                                        f'Дата доставки: <i>{info_order.date}</i>\n' 
-                                        f'Время доставки: <i>{info_order.time}</i>\n' 
-                                        f'Количество топлива: <i>{info_order.volume} литров</i>\n',
-                                   keyboard=keyboard)
+    for admin in config.tg_bot.admin_ids.split(','):
+        try:
+            msg_admin = await bot.send_message(chat_id=admin,
+                                               text=f'@{message.from_user.username}'
+                                                    f' отказался от выполнения заказа № {order_id},'
+                                                    f' комментарий: {comment_cancel}\n'
+                                                    f'Информация о заказе № {order_id}:\n'
+                                                    f'Заказчик: <a href="tg://user?id={info_order.tg_id}">{info_user.username}</a>\n' 
+                                                    f'Плательщик: <i>{info_order.payer}</i>\n' 
+                                                    f'ИНН: <i>{info_order.inn}</i>\n' 
+                                                    f'Адрес: <i>{info_order.address}</i>\n' 
+                                                    f'Контактное лицо: <i>{info_order.contact}</i>\n' 
+                                                    f'Дата доставки: <i>{info_order.date}</i>\n' 
+                                                    f'Время доставки: <i>{info_order.time}</i>\n' 
+                                                    f'Количество топлива: <i>{info_order.volume} литров</i>\n',
+                                               reply_markup=keyboard)
+            await rq.update_order_admin_edit(order_id=order_id,
+                                             chat_id=int(admin),
+                                             message_id=msg_admin.message_id)
+        except:
+            pass
 
 
 @router.callback_query(F.data == 'pass_comment')
@@ -417,20 +424,27 @@ async def pass_comment(callback: CallbackQuery, state: FSMContext, bot: Bot) -> 
                                            forward=2,
                                            count=6,
                                            order_id=order_id)
-    await send_message_admins_text(bot=bot,
-                                   text=f'@{callback.from_user.username}'
-                                        f' отказался от выполнения заказа № {order_id},'
-                                        f' комментарий: отсутствует\n'
-                                        f'Информация о заказе № {order_id}:\n'
-                                        f'Заказчик: <a href="tg://user?id={info_order.tg_id}">{info_user.username}</a>\n' 
-                                        f'Плательщик: <i>{info_order.payer}</i>\n' 
-                                        f'ИНН: <i>{info_order.inn}</i>\n' 
-                                        f'Адрес: <i>{info_order.address}</i>\n' 
-                                        f'Контактное лицо: <i>{info_order.contact}</i>\n' 
-                                        f'Дата доставки: <i>{info_order.date}</i>\n' 
-                                        f'Время доставки: <i>{info_order.time}</i>\n' 
-                                        f'Количество топлива: <i>{info_order.volume} литров</i>\n',
-                                   keyboard=keyboard)
+    for admin in config.tg_bot.admin_ids.split(','):
+        try:
+            msg_admin = await bot.send_message(chat_id=admin,
+                                               text=f'@{callback.from_user.username}'
+                                                    f' отказался от выполнения заказа № {order_id},'
+                                                    f' комментарий: отсутствует\n'
+                                                    f'Информация о заказе № {order_id}:\n'
+                                                    f'Заказчик: <a href="tg://user?id={info_order.tg_id}">{info_user.username}</a>\n' 
+                                                    f'Плательщик: <i>{info_order.payer}</i>\n' 
+                                                    f'ИНН: <i>{info_order.inn}</i>\n' 
+                                                    f'Адрес: <i>{info_order.address}</i>\n' 
+                                                    f'Контактное лицо: <i>{info_order.contact}</i>\n' 
+                                                    f'Дата доставки: <i>{info_order.date}</i>\n' 
+                                                    f'Время доставки: <i>{info_order.time}</i>\n' 
+                                                    f'Количество топлива: <i>{info_order.volume} литров</i>\n',
+                                               reply_markup=keyboard)
+            await rq.update_order_admin_edit(order_id=order_id,
+                                             chat_id=int(admin),
+                                             message_id=msg_admin.message_id)
+        except:
+            pass
     await callback.answer()
 
 
