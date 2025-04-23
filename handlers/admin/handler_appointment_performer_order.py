@@ -9,7 +9,7 @@ from aiogram.enums import ChatAction
 
 import keyboards.partner.keyboard_order as kb
 import database.requests as rq
-from database.models import User, Order
+from database.models import User, Order, OrderAdminEdit, OrderPartnerDelete
 from utils.error_handling import error_handler
 from config_data.config import Config, load_config
 from filter.user_filter import IsRoleUser
@@ -270,6 +270,7 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
                                               f'Количество топлива: <i>{order_info.volume} литров</i>\n',
                                          reply_markup=keyboard)
     else:
+        # подтверждение назначения водителя
         data = await state.get_data()
         order_id = data["order_id"]
         tg_id_executor = data['tg_id_executor']
@@ -301,7 +302,7 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
             #                             f'Количество топлива: <i>{order_info.volume} литров</i>\n'
             #                             f'Водитель <a href="tg://user?id={user_info.tg_id}">'
             #                             f'{user_info.username}</a>')
-            info_message = await rq.get_order_partner_delete(order_id=order_id)
+            info_message: OrderPartnerDelete = await rq.get_order_partner_delete(order_id=order_id)
             await bot.delete_message(chat_id=info_message.partner_tg_id,
                                      message_id=info_message.message_id)
             msg_partner = await bot.send_message(chat_id=order_info.tg_id,
@@ -348,6 +349,14 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
                                        text=f'На заказ №{order_id} администратором @{callback.from_user.username}'
                                             f' назначен водитель <a href="tg://user?id={user_info.tg_id}">'
                                             f'{user_info.username}</a>')
+            except:
+                pass
+        messages_admin: list[OrderAdminEdit] = await rq.get_order_admin_edit(order_id=order_id)
+        for info_message_admin in messages_admin:
+            try:
+                await bot.edit_message_reply_markup(chat_id=info_message_admin.chat_id,
+                                                    message_id=info_message_admin.message_id,
+                                                    reply_markup=None)
             except:
                 pass
     await callback.answer()
