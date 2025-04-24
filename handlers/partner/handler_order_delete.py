@@ -12,8 +12,7 @@ import database.requests as rq
 from database.models import User, Order, OrderAdminEdit
 from utils.error_handling import error_handler
 from config_data.config import Config, load_config
-from filter.user_filter import IsRoleUser
-from filter.filter import validate_inn, validate_russian_phone_number
+from utils.send_admins import send_message_admins_text
 from utils.utils_keyboard import utils_handler_pagination_to_composite_text
 from filter.user_filter import check_role
 
@@ -127,7 +126,7 @@ async def process_orderdeletelist_pagination(callback: CallbackQuery, state: FSM
 @error_handler
 async def process_orderdeletelist_select(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
     """
-    Выбор заказа для повтора
+    Выбор заказа для удаления
     :param callback: {callback_prefix_select}_{item_id}
     :param state:
     :param bot:
@@ -153,7 +152,7 @@ async def process_orderdeletelist_select(callback: CallbackQuery, state: FSMCont
 @error_handler
 async def process_deleteorder(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
     """
-    Пагинация по списку заказов
+    Подтверждение удаления заказа
     :param callback: repeatorder_confirm, repeatorder_edit
     :param state:
     :param bot:
@@ -165,7 +164,9 @@ async def process_deleteorder(callback: CallbackQuery, state: FSMContext, bot: B
     order_id = data['order_id']
     info_order = await rq.get_order_id(order_id=order_id)
     if action == 'confirm':
+        # получаем информацию о списке сообщений с заказом у администрвторов
         messages_order: list[OrderAdminEdit] = await rq.get_order_admin_edit(order_id=order_id)
+        # пытаемся удалить заказ
         for info_message in messages_order:
             try:
                 await bot.delete_message(chat_id=info_message.chat_id,
@@ -173,6 +174,11 @@ async def process_deleteorder(callback: CallbackQuery, state: FSMContext, bot: B
             except:
                 pass
         await rq.delete_order_admin_edit(order_id=order_id)
+        await send_message_admins_text(bot=bot,
+                                       text=f'Заказ №{order_id} был удален <a href="tg://user?id={callback.from_user.id}">'
+                                            f'{callback.from_user.username}</a>',
+                                       keyboard=None)
+        # удаляем заказ
         await rq.delete_order(order_id=order_id)
         try:
             await callback.message.edit_text(text=f'Удаление заказа №{order_id} прошло успешно')

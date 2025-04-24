@@ -620,7 +620,7 @@ async def get_order_admin_edit(order_id: int) -> list[OrderAdminEdit]:
 
 async def delete_order_admin_edit(order_id: int) -> None:
     """
-    Получение списка отправленных сообщений с информацией о заказе
+    Удаление сообщения с отправленным заказам
     :param order_id:
     :return:
     """

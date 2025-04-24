@@ -8,9 +8,9 @@ from aiogram.filters.callback_data import CallbackData
 
 from keyboards.partner.keyboard_order_edition import keyboard_action_repiet, keyboards_payer, \
     keyboards_inn, keyboards_contact, keyboard_time_interval
-from keyboards.partner.keyboard_order import keyboards_executor_personal
+from keyboards.partner.keyboard_order import keyboards_executor_personal, keyboard_delete_partner
 import database.requests as rq
-from database.models import User, Order
+from database.models import User, Order, OrderAdminEdit
 from utils.error_handling import error_handler
 from config_data.config import Config, load_config
 from filter.user_filter import IsRoleUser
@@ -718,7 +718,7 @@ async def get_time_state(message: Message, state: FSMContext, bot: Bot) -> None:
 async def orderedit_confirm(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
     """
     Пагинация по списку заказов
-    :param callback: repeatorder_confirm, repeatorder_edit
+    :param callback:
     :param state:
     :param bot:
     :return:
@@ -778,32 +778,97 @@ async def orderedit_confirm(callback: CallbackQuery, state: FSMContext, bot: Bot
     #                                   reply_markup=keyboard)
     # else:
     await callback.message.answer(text=f'Заказ № {order_id} создан и передан администратору. '
-                                       f'О смене статуса заказа мы вас оповестим')
+                                       f'О смене статуса заказа мы вас оповестим',
+                                  reply_markup=keyboard_delete_partner(order_id=order_id))
     admins: list[User] = await rq.get_users_role(role=rq.UserRole.admin)
-    for chat_id in admins:
+    message_admin: list[OrderAdminEdit] = await rq.get_order_admin_edit(order_id=order_id)
+    for item in message_admin:
         try:
-            await bot.send_message(chat_id=chat_id.tg_id,
-                                   text=f"Плательщик: <i>"
-                                        f"{data['payer_order'] if data.get('payer_order') else info_order.payer}"
-                                        f"</i>\n"
-                                        f"ИНН: <i>"
-                                        f"{data['inn_order'] if data.get('inn_order') else info_order.inn}"
-                                        f"</i>\n"
-                                        f"Адрес: <i>"
-                                        f"{data['address_order'] if data.get('address_order') else info_order.address}"
-                                        f"</i>\n"
-                                        f"Контактное лицо: <i>"
-                                        f"{data['contact_order'] if data.get('contact_order') else info_order.contact}</i>\n"
-                                        f"Дата доставки: <i>"
-                                        f"{data['date_order'] if data.get('date_order') else info_order.date}"
-                                        f"</i>\n"
-                                        f"Время доставки: <i>"
-                                        f"{data['time_order'] if data.get('time_order') else info_order.time}"
-                                        f"</i>\n"
-                                        f"Количество топлива: <i>"
-                                        f"{data['volume_order'] if data.get('volume_order') else info_order.volume}"
-                                        f" литров</i>\n",
-                                   reply_markup=keyboard)
+            await bot.edit_message_text(chat_id=item.chat_id,
+                                        message_id=item.message_id,
+                                        text=f"Заказ № {order_id} создан партнером"
+                                             f" <a href='tg://user?id={callback.from_user.id}'>"
+                                             f"{callback.from_user.username}</a>\n\n"
+                                             f"Плательщик: <i>"
+                                             f"{data['payer_order'] if data.get('payer_order') else info_order.payer}"
+                                             f"</i>\n"
+                                             f"ИНН: <i>"
+                                             f"{data['inn_order'] if data.get('inn_order') else info_order.inn}"
+                                             f"</i>\n"
+                                             f"Адрес: <i>"
+                                             f"{data['address_order'] if data.get('address_order') else info_order.address}"
+                                             f"</i>\n"
+                                             f"Контактное лицо: <i>"
+                                             f"{data['contact_order'] if data.get('contact_order') else info_order.contact}</i>\n"
+                                             f"Дата доставки: <i>"
+                                             f"{data['date_order'] if data.get('date_order') else info_order.date}"
+                                             f"</i>\n"
+                                             f"Время доставки: <i>"
+                                             f"{data['time_order'] if data.get('time_order') else info_order.time}"
+                                             f"</i>\n"
+                                             f"Количество топлива: <i>"
+                                             f"{data['volume_order'] if data.get('volume_order') else info_order.volume}"
+                                             f" литров</i>\n"
+                                             f"Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}",
+                                        reply_markup=keyboard)
         except:
-            pass
+            try:
+                await bot.edit_message_text(chat_id=item.chat_id,
+                                            message_id=item.message_id,
+                                            text=f"Заказ № {order_id} создан партнером"
+                                                 f" <a href='tg://user?id={callback.from_user.id}'>"
+                                                 f"{callback.from_user.username}</a>\n\n"
+                                                 f"Плательщик: <i>"
+                                                 f"{data['payer_order'] if data.get('payer_order') else info_order.payer}"
+                                                 f"</i>\n"
+                                                 f"ИНН: <i>"
+                                                 f"{data['inn_order'] if data.get('inn_order') else info_order.inn}"
+                                                 f"</i>\n"
+                                                 f"Адрес: <i>"
+                                                 f"{data['address_order'] if data.get('address_order') else info_order.address}"
+                                                 f"</i>\n"
+                                                 f"Контактное лицо: <i>"
+                                                 f"{data['contact_order'] if data.get('contact_order') else info_order.contact}</i>\n"
+                                                 f"Дата доставки: <i>"
+                                                 f"{data['date_order'] if data.get('date_order') else info_order.date}"
+                                                 f"</i>\n"
+                                                 f"Время доставки: <i>"
+                                                 f"{data['time_order'] if data.get('time_order') else info_order.time}"
+                                                 f"</i>\n"
+                                                 f"Количество топлива: <i>"
+                                                 f"{data['volume_order'] if data.get('volume_order') else info_order.volume}"
+                                                 f" литров</i>\n"
+                                                 f"Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}.",
+                                            reply_markup=keyboard)
+            except:
+                for chat_id in admins:
+                    try:
+                        await bot.send_message(chat_id=chat_id.tg_id,
+                                               text=f"Заказ № {order_id} создан партнером"
+                                                    f" <a href='tg://user?id={callback.from_user.id}'>"
+                                                    f"{callback.from_user.username}</a>\n\n"
+                                                    f"Плательщик: <i>"
+                                                    f"{data['payer_order'] if data.get('payer_order') else info_order.payer}"
+                                                    f"</i>\n"
+                                                    f"ИНН: <i>"
+                                                    f"{data['inn_order'] if data.get('inn_order') else info_order.inn}"
+                                                    f"</i>\n"
+                                                    f"Адрес: <i>"
+                                                    f"{data['address_order'] if data.get('address_order') else info_order.address}"
+                                                    f"</i>\n"
+                                                    f"Контактное лицо: <i>"
+                                                    f"{data['contact_order'] if data.get('contact_order') else info_order.contact}</i>\n"
+                                                    f"Дата доставки: <i>"
+                                                    f"{data['date_order'] if data.get('date_order') else info_order.date}"
+                                                    f"</i>\n"
+                                                    f"Время доставки: <i>"
+                                                    f"{data['time_order'] if data.get('time_order') else info_order.time}"
+                                                    f"</i>\n"
+                                                    f"Количество топлива: <i>"
+                                                    f"{data['volume_order'] if data.get('volume_order') else info_order.volume}"
+                                                    f" литров</i>\n"
+                                                    f"Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}",
+                                               reply_markup=keyboard)
+                    except:
+                        pass
     await state.clear()

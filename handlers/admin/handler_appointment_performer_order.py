@@ -303,8 +303,11 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
             #                             f'Водитель <a href="tg://user?id={user_info.tg_id}">'
             #                             f'{user_info.username}</a>')
             info_message: OrderPartnerDelete = await rq.get_order_partner_delete(order_id=order_id)
-            await bot.delete_message(chat_id=info_message.partner_tg_id,
-                                     message_id=info_message.message_id)
+            try:
+                await bot.delete_message(chat_id=info_message.partner_tg_id,
+                                         message_id=info_message.message_id)
+            except:
+                pass
             msg_partner = await bot.send_message(chat_id=order_info.tg_id,
                                                  text=f'Заказ № {order_id} создан.\n\n'
                                                       f'Плательщик: <i>{order_info.payer}</i>\n'
