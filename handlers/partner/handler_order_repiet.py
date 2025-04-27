@@ -9,6 +9,7 @@ from aiogram.filters.callback_data import CallbackData
 from keyboards.partner.keyboard_order_repiet import keyboard_repiet, keyboard_action_repiet, keyboards_payer, \
     keyboards_inn, keyboards_contact, keyboard_time_interval, keyboard_time_interval_r
 from keyboards.partner.keyboard_order import keyboards_executor_personal
+from keyboards.partner.keyboard_order import keyboard_delete_partner
 import database.requests as rq
 from database.models import User, Order
 from utils.error_handling import error_handler
@@ -906,6 +907,7 @@ async def get_volume_order_r(message: Message, state: FSMContext, bot: Bot) -> N
 
 
 async def orderrepeat_confirm(message: Message, state: FSMContext, bot: Bot, data: dict, info_order: Order):
+    logging.info('orderrepeat_confirm')
     order_data = {"tg_id": message.from_user.id,
                   "payer": data['payer_order'] if data.get('payer_order') else info_order.payer,
                   "inn": data['inn_order'] if data.get('inn_order') else info_order.inn,
@@ -941,8 +943,13 @@ async def orderrepeat_confirm(message: Message, state: FSMContext, bot: Bot, dat
                                   f'Количество топлива: <i>{info_order.volume} литров</i>\n',
                              reply_markup=keyboard)
     else:
-        await message.answer(text=f'Заказ № {order_id} создан и передан администратору. '
-                                  f'О смене статуса заказа мы вас оповестим')
+        msg = await message.answer(text=f'Заказ № {order_id} создан и передан администратору. '
+                                        f'О смене статуса заказа мы вас оповестим',
+                                   reply_markup=keyboard_delete_partner(order_id=order_id))
+        # добавляем информацию о сообщении в БД для последующего редактирования
+        await rq.add_order_partner_delete(data={"order_id": order_id,
+                                                "partner_tg_id": message.from_user.id,
+                                                "message_id": msg.message_id})
         admins: list[User] = await rq.get_users_role(role=rq.UserRole.admin)
         for chat_id in admins:
             try:
