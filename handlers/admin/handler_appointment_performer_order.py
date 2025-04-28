@@ -372,6 +372,11 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
                                        text=f'На заказ №{order_id} администратором @{callback.from_user.username}'
                                             f' назначен водитель <a href="tg://user?id={user_info.tg_id}">'
                                             f'{user_info.username}</a>')
+                await bot.send_message(chat_id=-1002691975634,
+                                       text=f'На заказ №{order_id} администратором @{callback.from_user.username}'
+                                            f' назначен водитель <a href="tg://user?id={user_info.tg_id}">'
+                                            f'{user_info.username}</a>',
+                                       message_thread_id=4)
             except:
                 pass
         messages_admin: list[OrderAdminEdit] = await rq.get_order_admin_edit(order_id=order_id)

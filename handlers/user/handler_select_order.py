@@ -334,12 +334,18 @@ async def send_report(callback: CallbackQuery, state: FSMContext, bot: Bot) -> N
     order_partner_delete: OrderPartnerDelete = await rq.get_order_partner_delete(order_id=order_id)
     # если информация о сообщении есть
     if order_partner_delete:
-        # удаляем клавиатуру (кнопку УДАЛИТЬ)
-        await bot.edit_message_reply_markup(chat_id=order_partner_delete.partner_tg_id,
-                                            message_id=order_partner_delete.message_id,
-                                            reply_markup=None)
-        # удаляем запись в БД о сообщении
-        await rq.delete_order_partner_delete(order_id=order_id)
+        try:
+            # удаляем клавиатуру (кнопку УДАЛИТЬ)
+            await bot.edit_message_reply_markup(chat_id=order_partner_delete.partner_tg_id,
+                                                message_id=order_partner_delete.message_id,
+                                                reply_markup=None)
+            # удаляем запись в БД о сообщении
+            await rq.delete_order_partner_delete(order_id=order_id)
+        except:
+            await bot.send_message(chat_id=config.tg_bot.support_id,
+                                   text=f'У пользователя <a href="tg://user?id={order_partner_delete.partner_tg_id}>'
+                                        f'order_partner_delete.partner_tg_id</a> не обновлена клавиатура, '
+                                        f'не удалена кнопка УДАЛИТЬ')
     # отправляем заказчику в личку квитанцию если он не является админом
     if str(info_order.tg_id) not in config.tg_bot.admin_ids.split(','):
         msg: Message = await bot.send_photo(chat_id=info_order.tg_id,
