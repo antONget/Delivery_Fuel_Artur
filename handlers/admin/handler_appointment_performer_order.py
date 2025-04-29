@@ -310,6 +310,22 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
             # except:
             #     pass
             msg_partner = await rq.get_order_partner_delete(order_id=order_id)
+            msgs_admin: list[OrderAdminEdit] = await rq.get_order_admin_edit(order_id=order_id)
+            msg_group = [msg for msg in msgs_admin if msg.chat_id == -1002691975634]
+            try:
+                await bot.edit_message_text(chat_id=-1002691975634,
+                                            message_id=msg_group[0].message_id,
+                                            text=f'Заказ № {order_id}.\n\n'
+                                                 f'Плательщик: <i>{order_info.payer}</i>\n'
+                                                 f'ИНН: <i>{order_info.inn}</i>\n'
+                                                 f'Адрес: <i>{order_info.address}</i>\n'
+                                                 f'Контактное лицо: <i>{order_info.contact}</i>\n'
+                                                 f'Дата доставки: <i>{order_info.date}</i>\n'
+                                                 f'Время доставки: <i>{order_info.time}</i>\n'
+                                                 f'Количество топлива: <i>{order_info.volume} литров</i>\n'
+                                                 f'Назначен водитель <a href="tg://user?id={user_info.tg_id}">')
+            except:
+                pass
             try:
                 msg_partner = await bot.edit_message_text(chat_id=order_info.tg_id,
                                                           message_id=msg_partner.message_id,
@@ -372,11 +388,11 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
                                        text=f'На заказ №{order_id} администратором @{callback.from_user.username}'
                                             f' назначен водитель <a href="tg://user?id={user_info.tg_id}">'
                                             f'{user_info.username}</a>')
-                await bot.send_message(chat_id=-1002691975634,
-                                       text=f'На заказ №{order_id} администратором @{callback.from_user.username}'
-                                            f' назначен водитель <a href="tg://user?id={user_info.tg_id}">'
-                                            f'{user_info.username}</a>',
-                                       message_thread_id=4)
+                # await bot.send_message(chat_id=-1002691975634,
+                #                        text=f'На заказ №{order_id} администратором @{callback.from_user.username}'
+                #                             f' назначен водитель <a href="tg://user?id={user_info.tg_id}">'
+                #                             f'{user_info.username}</a>',
+                #                        message_thread_id=4)
             except:
                 pass
         messages_admin: list[OrderAdminEdit] = await rq.get_order_admin_edit(order_id=order_id)
