@@ -490,8 +490,8 @@ async def get_volume_order(message: Message, state: FSMContext, bot: Bot) -> Non
                                                   forward=2,
                                                   count=6,
                                                   order_id=order_id)
-        # list_admins: list[User] = await rq.get_users_role(role=rq.UserRole.admin)
-        # admins_tg_id: list[int] = [admin.tg_id for admin in list_admins]
+        list_admins: list[User] = await rq.get_users_role(role=rq.UserRole.admin)
+        admins_tg_id: list[int] = [admin.tg_id for admin in list_admins]
         # if message.from_user.id in admins_tg_id:
         #     await message.answer(text=f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}\n'
         #                               f'Плательщик: <i>{data["payer_order"]}</i>\n'
@@ -502,15 +502,16 @@ async def get_volume_order(message: Message, state: FSMContext, bot: Bot) -> Non
         #                               f'Время доставки: <i>{data["time_order"]}</i>\n'
         #                               f'Количество топлива: <i>{data["volume_order"]} литров</i>\n',
         #                          reply_markup=keyboard)
-        # else:
+
         # отправляем информационное сообщение заказчику с кнопками УДАЛИТЬ и РЕДАКТИРОВАТЬ
-        msg = await message.answer(text=f'Заказ № {order_id} создан и передан администратору. '
-                                        f'О смене статуса заказа мы вас оповестим',
-                                   reply_markup=kb.keyboard_delete_partner(order_id=order_id))
-        # добавляем информацию о сообщении в БД для последующего редактирования
-        await rq.add_order_partner_delete(data={"order_id": order_id,
-                                                "partner_tg_id": message.from_user.id,
-                                                "message_id": msg.message_id})
+        if message.from_user.id not in admins_tg_id:
+            msg = await message.answer(text=f'Заказ № {order_id} создан и передан администратору. '
+                                            f'О смене статуса заказа мы вас оповестим',
+                                       reply_markup=kb.keyboard_delete_partner(order_id=order_id))
+            # добавляем информацию о сообщении в БД для последующего редактирования
+            await rq.add_order_partner_delete(data={"order_id": order_id,
+                                                    "partner_tg_id": message.from_user.id,
+                                                    "message_id": msg.message_id})
         # производим рассылку заказа админам для назначения водителя
         admins: list[User] = await rq.get_users_role(role=rq.UserRole.admin)
         for chat_id in admins:

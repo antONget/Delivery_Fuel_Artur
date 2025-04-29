@@ -572,6 +572,11 @@ async def update_order_partner_delete(order_id: int, message_id: int) -> None:
         if order_message:
             order_message.message_id = message_id
             await session.commit()
+        # else:
+        #     data = {"order_id": order_id, "chat_id": chat_id, "message_id": message_id}
+        #     new_order_partner_delete = OrderPartnerDelete(**data)
+        #     session.add(new_order_partner_delete)
+        #     await session.commit()
 
 
 async def delete_order_partner_delete(order_id: int) -> None:

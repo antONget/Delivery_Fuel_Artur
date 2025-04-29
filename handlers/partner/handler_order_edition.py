@@ -45,7 +45,7 @@ async def edit_order(callback: CallbackQuery, state: FSMContext, bot: Bot):
     :param bot:
     :return:
     """
-    logging.info('edit_order')
+    logging.info(f'edit_order: {callback.from_user.id}')
     tg_id = callback.from_user.id
     if await check_role(tg_id=callback.from_user.id, role=rq.UserRole.admin):
         tg_id = None
@@ -234,7 +234,7 @@ async def edit_order_volume(callback: CallbackQuery, state: FSMContext, bot: Bot
     :param bot:
     :return:
     """
-    logging.info('edit_order_volume')
+    logging.info(f'edit_order_volume {callback.from_user.id}')
     await callback.message.edit_text(text='Пришлите количество топлива')
     await state.set_state(OrderEdit.volume_state)
 
@@ -269,7 +269,7 @@ async def edit_order_address(callback: CallbackQuery, state: FSMContext, bot: Bo
     :param bot:
     :return:
     """
-    logging.info('edit_order_address')
+    logging.info(f'edit_order_address {callback.from_user.id}')
     await callback.message.edit_text(text='Пришлите адрес доставки')
     await state.set_state(OrderEdit.address_state)
 
@@ -300,7 +300,7 @@ async def edit_order_payer(callback: CallbackQuery, state: FSMContext, bot: Bot)
     :param bot:
     :return:
     """
-    logging.info('edit_order_payer')
+    logging.info(f'edit_order_payer {callback.from_user.id}')
     tg_id = callback.from_user.id
     if await check_role(tg_id=callback.from_user.id, role=rq.UserRole.admin):
         tg_id = None
@@ -671,8 +671,12 @@ async def edit_order_time(callback: CallbackQuery, state: FSMContext, bot: Bot):
     :return:
     """
     logging.info('edit_order_time')
-    await callback.message.edit_text(text='Выберите удобный временной интервал для доставки',
-                                     reply_markup=keyboard_time_interval())
+    try:
+        await callback.message.edit_text(text='Выберите удобный временной интервал для доставки',
+                                         reply_markup=keyboard_time_interval())
+    except:
+        await callback.message.edit_text(text='Выберите удобный временной интервал для доставки.',
+                                         reply_markup=keyboard_time_interval())
 
 
 @router.callback_query(F.data.startswith('edittimeinterval_'))
@@ -830,15 +834,18 @@ async def orderedit_confirm(callback: CallbackQuery, state: FSMContext, bot: Bot
                          f"{data['volume_order'] if data.get('volume_order') else info_order.volume}" \
                          f" литров</i>\n" \
                          f"Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}"
+    # производим рассылку заказа администраторам и в группу
     for item in message_admin:
         try:
             if item.chat_id == -1002691975634:
                 keyboard = None
                 text_admin_message = '\n'.join(text_admin_message.split('\n')[:-1])
-            await bot.edit_message_text(chat_id=item.chat_id,
-                                        message_id=item.message_id,
-                                        text=text_admin_message,
-                                        reply_markup=keyboard)
+            msg_admin = await bot.edit_message_text(chat_id=item.chat_id,
+                                                    message_id=item.message_id,
+                                                    text=text_admin_message,
+                                                    reply_markup=keyboard)
+            await rq.update_order_admin_edit(order_id=order_id, message_id=msg_admin.message_id, chat_id=item.chat_id)
+            # await rq.add_order_admin_edit(data={"order_id": order_id, "chat_id": item.chat_id, "message_id": msg_admin.message_id})
         except:
             try:
                 await bot.edit_message_text(chat_id=item.chat_id,
