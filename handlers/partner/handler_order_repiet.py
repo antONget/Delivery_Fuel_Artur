@@ -51,12 +51,11 @@ async def repeat_order(callback: CallbackQuery, state: FSMContext, bot: Bot):
     :param bot:
     :return:
     """
-    logging.info('repeat_order')
+    logging.info(f'repeat_order: {callback.from_user.id}')
     tg_id = callback.from_user.id
     if await check_role(tg_id=callback.from_user.id, role=rq.UserRole.admin):
         tg_id = None
     list_orders: list[Order] = await rq.get_order_tg_id(tg_id=tg_id)
-    print(len(list_orders))
     if list_orders:
         page = 0
         text_message = f'Выберите заказ для повторной отправки\n\n' \
@@ -91,7 +90,7 @@ async def process_orderrepeatlist_pagination(callback: CallbackQuery, state: FSM
     :param bot:
     :return:
     """
-    logging.info(f'process_orderrepeatlist_pagination: {callback.from_user.id}')
+    logging.info(f'process_orderrepeatlist_pagination:{callback.data} #{callback.from_user.id}')
     page: int = int(callback.data.split('_')[-1])
     action: str = callback.data.split('_')[-2]
     tg_id = callback.from_user.id
@@ -139,10 +138,9 @@ async def process_orderrepeatlist_select(callback: CallbackQuery, state: FSMCont
     """
     logging.info(f'process_orderrepeatlist_select: {callback.from_user.id}')
     page: int = int(callback.data.split('_')[-1])
-    print(page)
     info_order: Order = await rq.get_order_id(page)
     await state.update_data(order_id=page)
-    text_message = f'Выберите заказ для повторной отправки\n\n' \
+    text_message = f'Заказ для повторной отправки\n\n' \
                    f'Плательщик: <i>{info_order.payer}</i>\n' \
                    f'ИНН: <i>{info_order.inn}</i>\n' \
                    f'Адрес: <i>{info_order.address}</i>\n' \
@@ -158,13 +156,13 @@ async def process_orderrepeatlist_select(callback: CallbackQuery, state: FSMCont
 @error_handler
 async def process_repeatorder(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
     """
-    Пагинация по списку заказов
+    Подтверждение повтора заказа или его редактирование
     :param callback: repeatorder_confirm, repeatorder_edit
     :param state:
     :param bot:
     :return:
     """
-    logging.info(f'process_repeatorder: {callback.from_user.id}')
+    logging.info(f'process_repeatorder:{callback.data} {callback.from_user.id}')
     action = callback.data.split('_')[-1]
     data = await state.get_data()
     order_id = data['order_id']
@@ -844,13 +842,13 @@ async def process_simple_calendar(callback: CallbackQuery,
 @error_handler
 async def select_time_order_r(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
     """
-    Получаем время доставки
+    Получаем время доставки после подтверждения доставки
     :param callback:
     :param state:
     :param bot:
     :return:
     """
-    logging.info(f'select_time_order_r: {callback.from_user.id}')
+    logging.info(f'select_time_order_r:{callback.data} {callback.from_user.id}')
     time_order = callback.data.split('_')[-1]
     if time_order != 'other':
         await state.update_data(time_order=time_order)
@@ -919,6 +917,7 @@ async def orderrepeat_confirm(message: Message, state: FSMContext, bot: Bot, dat
                   "status": rq.OrderStatus.create,
                   "date_create": datetime.now().strftime('%d.%m.%Y %H:%M')}
     order_id: int = await rq.add_order(data=order_data)
+    logging.info(f'CREATE ORDER #{order_id}; TG_ID #{message.from_user.id}')
     await state.update_data(order_id=order_id)
     list_users: list[User] = await rq.get_users_role(role=rq.UserRole.executor)
     if not list_users:
@@ -984,8 +983,7 @@ async def orderrepeat_confirm(message: Message, state: FSMContext, bot: Bot, dat
                                             f'Контактное лицо: <i>{info_order.contact}</i>\n'
                                             f'Дата доставки: <i>{info_order.date}</i>\n'
                                             f'Время доставки: <i>{info_order.time}</i>\n'
-                                            f'Количество топлива: <i>{info_order.volume} литров</i>\n'
-                                            f'Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}',
+                                            f'Количество топлива: <i>{info_order.volume} литров</i>\n',
                                        message_thread_id=4)
     # await rq.update_order_admin_edit(order_id=order_id,
     #                                  chat_id=-1002691975634,

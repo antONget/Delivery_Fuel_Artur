@@ -73,7 +73,7 @@ async def process_start_command_user(message: Message, state: FSMContext, comman
             await message.answer(text='Пригласительная ссылка не валидна')
     # вывод клавиатуры в зависимости от роли пользователя
     user: User = await rq.get_user_by_id(tg_id=message.from_user.id)
-    print(user.role)
+    # print(user.role)
     # пользователь
     if user.role == rq.UserRole.user:
         await message.answer(text='Бот доступен только авторизованным пользователям')
@@ -129,7 +129,7 @@ async def change_role_admin_select_role(callback: CallbackQuery, state: FSMConte
     await callback.message.edit_text(text=f'Роль {select_role.upper()} успешно установлена',
                                      reply_markup=None)
     user: User = await rq.get_user_by_id(tg_id=callback.from_user.id)
-    print('#', user.role)
+    # print('#', user.role)
     # пользователь
     if user.role == rq.UserRole.user:
         await callback.message.answer(text='Бот доступен только авторизованным пользователям')

@@ -31,7 +31,7 @@ def keyboards_edit_nickname(list_users: list[User], back, forward, count) -> Inl
     if forward >= max_forward:
         forward = max_forward
         back = forward - 2
-    print(back, forward, max_forward)
+    # print(back, forward, max_forward)
     kb_builder = InlineKeyboardBuilder()
     buttons = []
     for user in list_users[back*count:(forward-1)*count]:

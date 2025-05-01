@@ -48,7 +48,7 @@ async def delete_order(callback: CallbackQuery, state: FSMContext, bot: Bot):
         tg_id = None
     list_orders: list[Order] = await rq.get_orders_tg_id_creator_status(tg_id_creator=tg_id,
                                                                         status=rq.OrderStatus.create)
-    print(list_orders)
+    # print(list_orders)
     if list_orders:
         page = 0
         text_message = f'Выберите заказ для удаления\n\n' \

@@ -125,7 +125,7 @@ def keyboards_del_personal(list_users: list[User], back, forward, count) -> Inli
     :return:
     """
     logging.info(f'keyboards_del_personal')
-    print(back, forward)
+    # print(back, forward)
     # проверка чтобы не ушли в минус
     if back < 0:
         back = 0
@@ -141,7 +141,7 @@ def keyboards_del_personal(list_users: list[User], back, forward, count) -> Inli
     if forward >= max_forward:
         forward = max_forward
         back = forward - 2
-    print(back, forward, max_forward)
+    # print(back, forward, max_forward)
     kb_builder = InlineKeyboardBuilder()
     buttons = []
     for user in list_users[back*count:(forward-1)*count]:

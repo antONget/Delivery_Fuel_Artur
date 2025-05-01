@@ -39,7 +39,7 @@ async def process_buttons_order(message: Message, state: FSMContext):
     :param state:
     :return:
     """
-    logging.info('process_buttons_order')
+    logging.info(f'process_buttons_order: - {message.from_user.id}')
     await state.set_state(state=None)
     if IsRoleExecutor():
         await message.answer(text='Выберите тип заявки',
@@ -56,6 +56,7 @@ async def select_type_order(callback: CallbackQuery, state: FSMContext, bot: Bot
     :param bot:
     :return:
     """
+    logging.info(f'select_type_order:{callback.data} - {callback.from_user.id}')
     type_order = callback.data.split('_')[-1]
     if type_order == 'work':
         orders: list[Order] = await rq.get_orders_tg_id_status(tg_id_executor=callback.from_user.id,
@@ -115,6 +116,7 @@ async def select_type_order(callback: CallbackQuery, state: FSMContext, bot: Bot
     :param bot:
     :return:
     """
+    logging.info(f'select_type_order:{callback.data} - {callback.from_user.id}')
     type_select = callback.data.split('_')[1]
     data = await state.get_data()
     type_order = data['type_order']
@@ -182,7 +184,7 @@ async def select_type_order(callback: CallbackQuery, state: FSMContext, bot: Bot
         else:
             await callback.message.edit_text(text='Нет заявок в работе')
     if type_order == 'completed':
-        print(block)
+        # print(block)
         if type_select == 'changereciept':
             order_id = int(callback.data.split('_')[-1])
             list_mailing: list[OrderReceipt] = await rq.get_order_receipt(order_id=order_id)
@@ -297,7 +299,7 @@ async def send_report(callback: CallbackQuery, state: FSMContext, bot: Bot) -> N
     :param bot:
     :return:
     """
-    logging.info(f'send_report: {callback.from_user.id} ')
+    logging.info(f'send_report:{callback.data} - {callback.from_user.id}')
 
     await state.set_state(state=None)
     await callback.message.delete()
@@ -416,7 +418,7 @@ async def pass_comment(callback: CallbackQuery, state: FSMContext, bot: Bot) -> 
     :param bot:
     :return:
     """
-    logging.info(f'send_report: {callback.from_user.id} ')
+    logging.info(f'pass_comment:{callback.data} - {callback.from_user.id}')
     await state.set_state(state=None)
     await callback.message.edit_text(text='Данные от вас получены и переданы')
     data = await state.get_data()
@@ -464,7 +466,7 @@ async def cancel_change_receipt(callback: CallbackQuery, state: FSMContext, bot:
     :param bot:
     :return:
     """
-    logging.info(f'cancel_change_receipt: {callback.from_user.id} ')
+    logging.info(f'cancel_change_receipt:{callback.data} - {callback.from_user.id}')
     await state.set_state(state=None)
     await process_buttons_order(message=callback.message, state=state)
 

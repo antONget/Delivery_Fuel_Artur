@@ -64,7 +64,7 @@ async def process_select_action(callback: CallbackQuery, state: FSMContext, bot:
     elif edit_role == rq.UserRole.admin:
         role = '<b>АДМИНИСТРАТОРА</b>'
     await state.update_data(edit_role=edit_role)
-    print(edit_role)
+    # print(edit_role)
     if edit_role == 'executor':
         await callback.message.edit_text(text=f"Назначить, разжаловать ВОДИТЕЛЯ или изменить никнейм?",
                                          reply_markup=kb.keyboard_select_action_executor())

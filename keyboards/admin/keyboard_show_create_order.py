@@ -16,7 +16,7 @@ def keyboards_executor_personal(list_users: list[User], back: int,
     :return:
     """
     logging.info(f'keyboards_executor_personal')
-    print(back, forward)
+    # print(back, forward)
     # проверка чтобы не ушли в минус
     if back < 0:
         back = 0

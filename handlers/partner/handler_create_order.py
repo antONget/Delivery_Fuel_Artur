@@ -43,6 +43,7 @@ async def create_order(callback: CallbackQuery, state: FSMContext, bot: Bot):
     :param bot:
     :return:
     """
+    logging.info(f'create_order:{callback.data} - {callback.from_user.id}')
     tg_id = callback.from_user.id
     if await check_role(tg_id=callback.from_user.id, role=rq.UserRole.admin):
         tg_id = None
@@ -69,7 +70,7 @@ async def process_payerlist_pagination(callback: CallbackQuery, state: FSMContex
     :param bot:
     :return:
     """
-    logging.info(f'process_payerlist_pagination: {callback.from_user.id}')
+    logging.info(f'process_payerlist_pagination:{callback.data} {callback.from_user.id}')
     block = int(callback.data.split('_')[-1])
     action = callback.data.split('_')[-2]
     tg_id = callback.from_user.id
@@ -109,7 +110,7 @@ async def payerlist_select(callback: CallbackQuery, state: FSMContext, bot: Bot)
     :param bot:
     :return:
     """
-    logging.info(f'payerlist_select: {callback.from_user.id}')
+    logging.info(f'payerlist_select:{callback.data} {callback.from_user.id}')
     order_id = callback.data.split('_')[-1]
     info_order = await rq.get_order_id(int(order_id))
     payer_order = info_order.payer
@@ -169,7 +170,7 @@ async def process_innlist_pagination(callback: CallbackQuery, state: FSMContext,
     :param bot:
     :return:
     """
-    logging.info(f'process_innlist_pagination: {callback.from_user.id}')
+    logging.info(f'process_innlist_pagination:{callback.data} {callback.from_user.id}')
     block = int(callback.data.split('_')[-1])
     action = callback.data.split('_')[-2]
     tg_id = callback.from_user.id
@@ -209,7 +210,7 @@ async def innlist_select(callback: CallbackQuery, state: FSMContext, bot: Bot):
     :param bot:
     :return:
     """
-    logging.info(f'innlist_select: {callback.from_user.id}')
+    logging.info(f'innlist_select:{callback.data} {callback.from_user.id}')
     order_id = callback.data.split('_')[-1]
     info_order = await rq.get_order_id(int(order_id))
     inn_order = info_order.inn
@@ -277,7 +278,7 @@ async def process_contactlist_pagination(callback: CallbackQuery, state: FSMCont
     :param bot:
     :return:
     """
-    logging.info(f'process_contactlist_pagination: {callback.from_user.id}')
+    logging.info(f'process_contactlist_pagination:{callback.data} {callback.from_user.id}')
     block = int(callback.data.split('_')[-1])
     action = callback.data.split('_')[-2]
     tg_id = callback.from_user.id
@@ -315,7 +316,7 @@ async def contactlist_select(callback: CallbackQuery, state: FSMContext, bot: Bo
     :param bot:
     :return:
     """
-    logging.info(f'contactlist_select: {callback.from_user.id}')
+    logging.info(f'contactlist_select:{callback.data} {callback.from_user.id}')
     try:
         await callback.message.delete()
     except:
@@ -374,13 +375,20 @@ async def get_contact_order(message: Message, state: FSMContext, bot: Bot) -> No
 async def process_simple_calendar(callback: CallbackQuery,
                                   callback_data: CallbackData,
                                   state: FSMContext):
+    """
+    КАЛЕНДАРЬ
+    :param callback:
+    :param callback_data:
+    :param state:
+    :return:
+    """
+    logging.info(f'process_simple_calendar:{callback.data} - {callback.from_user.id}')
     calendar = aiogram_calendar.SimpleCalendar(show_alerts=True)
     calendar.set_dates_range(datetime(2022, 1, 1), datetime(2030, 12, 31))
     selected, date_select = await calendar.process_selection(callback, callback_data)
     if selected:
         current_date = datetime.now()
         date_select = date_select + timedelta(hours=14)
-        logging.info(f'{current_date}||||{date_select}')
         # print(current_date.hour, current_date, date_select + timedelta(days=1))
         if current_date < date_select:
             date_order = date_select.strftime("%d.%m.%Y")
@@ -418,7 +426,7 @@ async def select_time_order(callback: CallbackQuery, state: FSMContext, bot: Bot
     :param bot:
     :return:
     """
-    logging.info(f'select_time_order: {callback.from_user.id}')
+    logging.info(f'select_time_order:{callback.data} - {callback.from_user.id}')
     time_order = callback.data.split('_')[-1]
     if time_order != 'other':
         await state.update_data(time_order=time_order)
@@ -448,7 +456,7 @@ async def get_time_state(message: Message, state: FSMContext, bot: Bot) -> None:
 
 @router.message(F.text, StateFilter(OrderState.volume_state))
 @error_handler
-async def get_volume_order(message: Message, state: FSMContext, bot: Bot) -> None:
+async def get_volume_order_and_write_order_to_DB(message: Message, state: FSMContext, bot: Bot) -> None:
     """
     Получаем количество топлива, создаем заказ для назначения на него водителя
     :param message:
@@ -456,7 +464,7 @@ async def get_volume_order(message: Message, state: FSMContext, bot: Bot) -> Non
     :param bot:
     :return:
     """
-    logging.info(f'get_volume_order: {message.from_user.id}')
+    logging.info(f'get_volume_order_and_write_order_to_DB: {message.from_user.id}')
     volume = message.text
     # валидация полученного значения количества топлива
     if not validate_volume(volume):
@@ -483,6 +491,7 @@ async def get_volume_order(message: Message, state: FSMContext, bot: Bot) -> Non
                       "status": rq.OrderStatus.create,
                       "date_create": datetime.now().strftime('%d.%m.%Y %H:%M')}
         order_id: int = await rq.add_order(data=order_data)
+        logging.info(f'CREATE ORDER #{order_id}; TG_ID #{message.from_user.id}')
         await state.update_data(order_id=order_id)
         # клавиатура для вывода списка ВОДИТЕЛЕЙ
         keyboard = kb.keyboards_executor_personal(list_users=list_users,

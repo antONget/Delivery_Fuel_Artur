@@ -31,7 +31,7 @@ def keyboards_show_report(list_users: list[User], back, forward, count) -> Inlin
     if forward >= max_forward:
         forward = max_forward
         back = forward - 2
-    print(back, forward, max_forward)
+    # print(back, forward, max_forward)
     kb_builder = InlineKeyboardBuilder()
     buttons = []
     for user in list_users[back*count:(forward-1)*count]:
@@ -77,7 +77,7 @@ def keyboards_executor_personal(list_users: list[User], back: int,
     :return:
     """
     logging.info(f'keyboards_executor_personal')
-    print(back, forward)
+    # print(back, forward)
     # проверка чтобы не ушли в минус
     if back < 0:
         back = 0

@@ -321,7 +321,7 @@ async def utils_handler_pagination_to_composite_text(list_items: list,
                                                      callback: CallbackQuery | None,
                                                      message: Message | None) -> None:
     """
-    Функция выводит текст переданный в паратметре text_message
+    Функция выводит текст переданный в параметре text_message
     :param list_items:
     :param text_message:
     :param page:
@@ -333,7 +333,7 @@ async def utils_handler_pagination_to_composite_text(list_items: list,
     :param message:
     :return:
     """
-    logging.info(f'utils_handler_pagination_to_composite_text')
+    logging.info(f'utils_handler_pagination_to_composite_text: page:{page}')
     max_page = len(list_items)
     if message:
         item = list_items[page]

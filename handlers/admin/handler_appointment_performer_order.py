@@ -38,7 +38,7 @@ class OrderState(StatesGroup):
 @error_handler
 async def process_forward_executor(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
     """
-    Пагинация по списку пользователей вперед
+    Пагинация по списку пользователей (водителей) вперед
     :param callback:
     :param state:
     :param bot:
@@ -109,7 +109,7 @@ async def process_back_executor(callback: CallbackQuery, state: FSMContext, bot:
     :return:
     """
     logging.info(f'process_back_executor: {callback.from_user.id}')
-    print(callback.data)
+    # print(callback.data)
     list_users = await rq.get_users_role(role=rq.UserRole.executor)
     back = int(callback.data.split('_')[-1]) - 1
     order_id = int(callback.data.split('_')[-2])
@@ -173,7 +173,7 @@ async def process_executor_select(callback: CallbackQuery, state: FSMContext, bo
     :param bot:
     :return:
     """
-    logging.info(f'process_executor_select: {callback.from_user.id}')
+    logging.info(f'process_executor_select:{callback.data} {callback.from_user.id}')
     telegram_id = int(callback.data.split('_')[-1])
     order_id = int(callback.data.split('_')[-2])
     info_order: Order = await rq.get_order_id(order_id=order_id)
@@ -237,13 +237,13 @@ async def process_executor_select(callback: CallbackQuery, state: FSMContext, bo
 @error_handler
 async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
     """
-    Подтверждение назначения водителя
+    Подтверждение или отмена назначения водителя
     :param callback:
     :param state:
     :param bot:
     :return:
     """
-    logging.info(f'process_confirm_appoint: {callback.from_user.id} -> {callback.data}')
+    logging.info(f'process_confirm_appoint:{callback.data} {callback.from_user.id}')
     select = callback.data.split('_')[-1]
     if select == 'cancel':
         data = await state.get_data()
@@ -280,6 +280,7 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
             await callback.message.delete()
             await callback.message.answer(text='Заказ удален')
             return
+        # обновляем сообщение у администратора назначившего водителя
         await callback.message.edit_text(text=f'Заказ № {order_id} создан.\n\n'
                                               f'Плательщик: <i>{order_info.payer}</i>\n'
                                               f'ИНН: <i>{order_info.inn}</i>\n'
@@ -292,27 +293,11 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
                                               f'{user_info.username}</a>',
                                          reply_markup=None)
         try:
-            # await bot.send_message(chat_id=order_info.tg_id,
-            #                        text=f'Заказ № {order_id} создан.\n\n'
-            #                             f'Плательщик: <i>{order_info.payer}</i>\n'
-            #                             f'ИНН: <i>{order_info.inn}</i>\n'
-            #                             f'Адрес: <i>{order_info.address}</i>\n'
-            #                             f'Контактное лицо: <i>{order_info.contact}</i>\n'
-            #                             f'Дата доставки: <i>{order_info.date}</i>\n'
-            #                             f'Время доставки: <i>{order_info.time}</i>\n'
-            #                             f'Количество топлива: <i>{order_info.volume} литров</i>\n'
-            #                             f'Водитель <a href="tg://user?id={user_info.tg_id}">'
-            #                             f'{user_info.username}</a>')
-            info_message: OrderPartnerDelete = await rq.get_order_partner_delete(order_id=order_id)
-            # try:
-            #     await bot.delete_message(chat_id=info_message.partner_tg_id,
-            #                              message_id=info_message.message_id)
-            # except:
-            #     pass
-            msg_partner = await rq.get_order_partner_delete(order_id=order_id)
+            msg_partner: OrderPartnerDelete = await rq.get_order_partner_delete(order_id=order_id)
             msgs_admin: list[OrderAdminEdit] = await rq.get_order_admin_edit(order_id=order_id)
             msg_group = [msg for msg in msgs_admin if msg.chat_id == -1002691975634]
             try:
+                # print(msg_group[0].message_id)
                 await bot.edit_message_text(chat_id=-1002691975634,
                                             message_id=msg_group[0].message_id,
                                             text=f'Заказ № {order_id}.\n\n'
@@ -323,7 +308,8 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
                                                  f'Дата доставки: <i>{order_info.date}</i>\n'
                                                  f'Время доставки: <i>{order_info.time}</i>\n'
                                                  f'Количество топлива: <i>{order_info.volume} литров</i>\n'
-                                                 f'Назначен водитель <a href="tg://user?id={user_info.tg_id}">')
+                                                 f'Назначен водитель <a href="tg://user?id={user_info.tg_id}">'
+                                                 f'{user_info.username}</a>')
             except:
                 pass
             try:

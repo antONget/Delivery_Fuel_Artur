@@ -13,7 +13,7 @@ async def check_role(tg_id: int, role: str) -> bool:
     """
     logging.info('check_role')
     user = await rq.get_user_by_id(tg_id=tg_id)
-    print('check_role', user.role, role)
+    # print('check_role', user.role, role)
     return user.role == role
 
 

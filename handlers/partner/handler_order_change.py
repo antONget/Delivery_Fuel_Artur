@@ -121,9 +121,9 @@ async def process_orderreqchangelist_select(callback: CallbackQuery, state: FSMC
     :param bot:
     :return:
     """
-    logging.info(f'process_orderreqchangelist_select: {callback.from_user.id}')
+    logging.info(f'process_orderreqchangelist_select:{callback.data} {callback.from_user.id}')
     page: int = int(callback.data.split('_')[-1])
-    print(page)
+    # print(page)
     info_order: Order = await rq.get_order_id(page)
     await state.update_data(order_id=page)
     text_message = f'Заказ №{page}\n' \

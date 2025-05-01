@@ -174,7 +174,7 @@ async def report_partner(callback: CallbackQuery, state: FSMContext, bot: Bot):
                 f'Дата доставки: <i>{orders[0].date if orders[0].date else "не указано"}</i>\n' \
                 f'Время доставки: <i>{orders[0].time}</i>\n' \
                 f'Количество топлива: <i>{orders[0].volume} литров</i>\n'
-        print(order)
+        # print(order)
         photo_order = orders[0].photo_ids_report
         await callback.message.answer_photo(photo=photo_order,
                                             caption=f'{order}',
