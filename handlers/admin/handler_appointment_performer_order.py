@@ -388,5 +388,8 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
                                                     message_id=info_message_admin.message_id,
                                                     reply_markup=None)
             except:
-                pass
+                await bot.send_message(chat_id=config.tg_bot.support_id,
+                                       text=f'Заказ № {order_id}.\n'
+                                            f'Администратор {info_message_admin.chat_id}.\n'
+                                            f'Ошибка при обновлении сообщения при назначении водителя')
     await callback.answer()

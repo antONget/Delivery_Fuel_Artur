@@ -42,7 +42,7 @@ async def delete_order(callback: CallbackQuery, state: FSMContext, bot: Bot):
     :param bot:
     :return:
     """
-    logging.info('delete_order')
+    logging.info(f'delete_order:{callback.data} - {callback.from_user.id}')
     tg_id = callback.from_user.id
     if await check_role(tg_id=callback.from_user.id, role=rq.UserRole.admin):
         tg_id = None
@@ -84,7 +84,7 @@ async def process_orderdeletelist_pagination(callback: CallbackQuery, state: FSM
     :param bot:
     :return:
     """
-    logging.info(f'process_orderdeletelist_pagination: {callback.from_user.id}')
+    logging.info(f'process_orderdeletelist_pagination:{callback.data} - {callback.from_user.id}')
     page: int = int(callback.data.split('_')[-1])
     action: str = callback.data.split('_')[-2]
     tg_id = callback.from_user.id
@@ -132,7 +132,7 @@ async def process_orderdeletelist_select(callback: CallbackQuery, state: FSMCont
     :param bot:
     :return:
     """
-    logging.info(f'process_orderdeletelist_select: {callback.from_user.id}')
+    logging.info(f'process_orderdeletelist_select:{callback.data} - {callback.from_user.id}')
     page: int = int(callback.data.split('_')[-1])
     info_order: Order = await rq.get_order_id(page)
     await state.update_data(order_id=page)
@@ -158,7 +158,7 @@ async def process_deleteorder(callback: CallbackQuery, state: FSMContext, bot: B
     :param bot:
     :return:
     """
-    logging.info(f'process_deleteorder: {callback.from_user.id}')
+    logging.info(f'process_deleteorder:{callback.data} - {callback.from_user.id}')
     action = callback.data.split('_')[-1]
     data = await state.get_data()
     order_id = data['order_id']
