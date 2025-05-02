@@ -150,7 +150,7 @@ async def process_edittorder(callback: CallbackQuery, state: FSMContext, bot: Bo
     await state.clear()
     await state.update_data(order_id=order_id)
     info_order = await rq.get_order_id(order_id=order_id)
-    if info_order.status == rq.OrderStatus.create:
+    if info_order.status != rq.OrderStatus.work:
         await callback.message.edit_text(text=f"Плательщик: <i>"
                                               f"{data['payer_order'] if data.get('payer_order') else info_order.payer}"
                                               f"</i>\n"
@@ -850,7 +850,7 @@ async def orderedit_confirm(callback: CallbackQuery, state: FSMContext, bot: Bot
             try:
                 await bot.edit_message_text(chat_id=item.chat_id,
                                             message_id=item.message_id,
-                                            text=f"Заказ № {order_id} создан партнером"
+                                            text=f"Заказ № {order_id} изменен партнером"
                                                  f" <a href='tg://user?id={callback.from_user.id}'>"
                                                  f"{callback.from_user.username}</a>\n\n"
                                                  f"Плательщик: <i>"
@@ -879,7 +879,7 @@ async def orderedit_confirm(callback: CallbackQuery, state: FSMContext, bot: Bot
                 for chat_id in admins:
                     try:
                         await bot.send_message(chat_id=chat_id.tg_id,
-                                               text=f"Заказ № {order_id} создан партнером"
+                                               text=f"Заказ № {order_id} изменен партнером"
                                                     f" <a href='tg://user?id={callback.from_user.id}'>"
                                                     f"{callback.from_user.username}</a>\n\n"
                                                     f"Плательщик: <i>"

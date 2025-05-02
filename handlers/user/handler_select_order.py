@@ -432,7 +432,9 @@ async def pass_comment(callback: CallbackQuery, state: FSMContext, bot: Bot) -> 
                                            forward=2,
                                            count=6,
                                            order_id=order_id)
-    for admin in config.tg_bot.admin_ids.split(','):
+    list_admin: list[User] = await rq.get_users_role(role=rq.UserRole.admin)
+    list_admin_tg_id: list[int] = [admin.tg_id for admin in list_admin]
+    for admin in list_admin_tg_id:
         try:
             msg_admin = await bot.send_message(chat_id=admin,
                                                text=f'@{callback.from_user.username}'
