@@ -52,6 +52,7 @@ async def repeat_order(callback: CallbackQuery, state: FSMContext, bot: Bot):
     :return:
     """
     logging.info(f'repeat_order: {callback.from_user.id}')
+    await state.clear()
     tg_id = callback.from_user.id
     if await check_role(tg_id=callback.from_user.id, role=rq.UserRole.admin):
         tg_id = None
@@ -286,7 +287,7 @@ async def main_change(state: FSMContext, message: Message):
                                      f"Количество топлива: <i>"
                                      f"{data['volume_order'] if data.get('volume_order') else info_order.volume}"
                                      f" литров</i>\n",
-                             reply_markup=keyboard_action_repiet())
+                                reply_markup=keyboard_action_repiet())
     except:
         await message.answer(text=f"Плательщик: <i>"
                                   f"{data['payer_order'] if data.get('payer_order') else info_order.payer}"
