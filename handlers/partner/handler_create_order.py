@@ -515,7 +515,14 @@ async def get_volume_order_and_write_order_to_DB(message: Message, state: FSMCon
         # отправляем информационное сообщение заказчику с кнопками УДАЛИТЬ и РЕДАКТИРОВАТЬ
         if message.from_user.id not in admins_tg_id:
             msg = await message.answer(text=f'Заказ № {order_id} создан и передан администратору. '
-                                            f'О смене статуса заказа мы вас оповестим',
+                                            f'О смене статуса заказа мы вас оповестим\n\n'
+                                            f'Плательщик: <i>{data["payer_order"]}</i>\n'
+                                            f'ИНН: <i>{data["inn_order"]}</i>\n'
+                                            f'Адрес: <i>{data["address_order"]}</i>\n'
+                                            f'Контактное лицо: <i>{data["contact_order"]}</i>\n'
+                                            f'Дата доставки: <i>{data["date_order"]}</i>\n'
+                                            f'Время доставки: <i>{data["time_order"]}</i>\n'
+                                            f'Количество топлива: <i>{data["volume_order"]} литров</i>\n',
                                        reply_markup=kb.keyboard_delete_partner(order_id=order_id))
             # добавляем информацию о сообщении в БД для последующего редактирования
             await rq.add_order_partner_delete(data={"order_id": order_id,
