@@ -302,7 +302,10 @@ async def send_report(callback: CallbackQuery, state: FSMContext, bot: Bot) -> N
     logging.info(f'send_report:{callback.data} - {callback.from_user.id}')
 
     await state.set_state(state=None)
-    await callback.message.delete()
+    try:
+        await callback.message.delete()
+    except:
+        pass
     await callback.message.answer(text='Ваш отчет направлен администратору')
     await callback.message.answer(text='Отправьте фотографию счетчика топлива')
     await state.set_state(state=StateReport.photo_counter)
