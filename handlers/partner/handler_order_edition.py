@@ -144,8 +144,9 @@ async def process_edittorder(callback: CallbackQuery, state: FSMContext, bot: Bo
     :param bot:
     :return:
     """
-    logging.info(f'process_edittorder: {callback.from_user.id}')
+    logging.info(f'process_edittorder: {callback.from_user.id} {callback.data}')
     order_id = int(callback.data.split('_')[-1])
+    logging.info(f'{order_id}')
     data = await state.get_data()
     await state.clear()
     await state.update_data(order_id=order_id)
@@ -507,7 +508,7 @@ async def edit_order_contact(callback: CallbackQuery, state: FSMContext, bot: Bo
     :param bot:
     :return:
     """
-    logging.info('edit_order_contact')
+    logging.info(f'edit_order_contact: {callback.from_user.id} {callback.data}')
     tg_id = callback.from_user.id
     if await check_role(tg_id=callback.from_user.id, role=rq.UserRole.admin):
         tg_id = None
@@ -731,6 +732,7 @@ async def orderedit_confirm(callback: CallbackQuery, state: FSMContext, bot: Bot
     await callback.message.delete()
     data = await state.get_data()
     order_id = data['order_id']
+    logging.info(f'{order_id}')
     info_order = await rq.get_order_id(order_id=order_id)
     payer = data.get('payer_order', info_order.payer)
     await rq.set_order_payer(order_id=order_id, payer=payer)
@@ -753,11 +755,13 @@ async def orderedit_confirm(callback: CallbackQuery, state: FSMContext, bot: Bot
     if not list_users:
         await callback.message.answer(text=f'Нет ВОДИТЕЛЕЙ для назначения их на заказ. Добавьте водителей.')
         return
-    keyboard = keyboards_executor_personal(list_users=list_users,
-                                           back=0,
-                                           forward=2,
-                                           count=6,
-                                           order_id=order_id)
+    keyboard = None
+    if info_order.status == rq.OrderStatus.create:
+        keyboard = keyboards_executor_personal(list_users=list_users,
+                                               back=0,
+                                               forward=2,
+                                               count=6,
+                                               order_id=order_id)
     # if callback.from_user.id in admins_tg_id:
     #     await callback.message.answer(text=f"Плательщик: <i>"
     #                                        f"{data['payer_order'] if data.get('payer_order') else info_order.payer}"
@@ -810,7 +814,7 @@ async def orderedit_confirm(callback: CallbackQuery, state: FSMContext, bot: Bot
         await rq.update_order_partner_delete(order_id=order_id,
                                              message_id=msg_partner.message_id)
     message_admin: list[OrderAdminEdit] = await rq.get_order_admin_edit(order_id=order_id)
-    text_admin_message = f"Заказ № {order_id} создан партнером" \
+    text_admin_message = f"Заказ № {order_id} отредактирован партнером" \
                          f" <a href='tg://user?id={callback.from_user.id}'>" \
                          f"{callback.from_user.username}</a>\n\n" \
                          f"Плательщик: <i>" \

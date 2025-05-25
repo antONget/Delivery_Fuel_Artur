@@ -243,7 +243,10 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
     :param bot:
     :return:
     """
-    logging.info(f'process_confirm_appoint:{callback.data} {callback.from_user.id}')
+    logging.info(f'process_confirm_appoint: {callback.data} {callback.from_user.id}')
+    data = await state.get_data()
+    order_id = data["order_id"]
+    logging.info(f"{order_id}")
     select = callback.data.split('_')[-1]
     if select == 'cancel':
         data = await state.get_data()
