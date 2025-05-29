@@ -6,7 +6,7 @@ from aiogram.filters import StateFilter
 
 from utils.error_handling import error_handler
 from config_data.config import Config, load_config
-from database.models import Order, OrderAdminEdit, OrderPartnerDelete
+from database.models import Order, OrderAdminEdit, OrderPartnerDelete, User
 from database import requests as rq
 from keyboards.partner.keyboard_order import keyboard_delete_partner
 
@@ -50,7 +50,7 @@ async def get_reason_cancel_order(message: Message, state: FSMContext, bot: Bot)
     :param bot:
     :return:
     """
-    logging.info('get_change_nickname')
+    logging.info('get_reason_cancel_order')
     reason = message.text
     data = await state.get_data()
     info_order: Order = await rq.get_order_id(order_id=data.get('order_id'))
@@ -73,4 +73,14 @@ async def get_reason_cancel_order(message: Message, state: FSMContext, bot: Bot)
         await rq.update_order_partner_delete(order_id=info_order.id, message_id=msg_partner.message_id)
     except:
         await message.answer(text='Бот не смог оповестить заказчика об отмене заказа')
+    list_admins: list[User] = await rq.get_users_role(role=rq.UserRole.admin)
+    for admin in list_admins:
+        try:
+            await bot.send_message(chat_id=admin.tg_id,
+                                   text=f'Заказ №{info_order.id} был удален администратором '
+                                        f'<a href="tg://user?id={message.from_user.id}">'
+                                        f'{message.from_user.username}</a>',
+                                   reply_markup=None)
+        except:
+            pass
     await state.set_state(state=None)

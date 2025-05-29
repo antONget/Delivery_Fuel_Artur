@@ -116,8 +116,8 @@ async def process_orderdeletelist_pagination(callback: CallbackQuery, state: FSM
                                                          page=page,
                                                          text_button_select='Выбрать',
                                                          callback_prefix_select='selectdelete',
-                                                         callback_prefix_back='backdelete',
-                                                         callback_prefix_next='nextdelete',
+                                                         callback_prefix_back='delete_back',
+                                                         callback_prefix_next='delete_next',
                                                          callback=callback,
                                                          message=None)
 
@@ -174,10 +174,16 @@ async def process_deleteorder(callback: CallbackQuery, state: FSMContext, bot: B
             except:
                 pass
         await rq.delete_order_admin_edit(order_id=order_id)
-        await send_message_admins_text(bot=bot,
-                                       text=f'Заказ №{order_id} был удален <a href="tg://user?id={callback.from_user.id}">'
+        list_admins: list[User] = await rq.get_users_role(role=rq.UserRole.admin)
+        for admin in list_admins:
+            try:
+                await bot.send_message(chat_id=admin.tg_id,
+                                       text=f'Заказ №{order_id} был удален администратором '
+                                            f'<a href="tg://user?id={callback.from_user.id}">'
                                             f'{callback.from_user.username}</a>',
-                                       keyboard=None)
+                                       reply_markup=None)
+            except:
+                pass
         # удаляем заказ
         await rq.delete_order(order_id=order_id)
         try:

@@ -54,12 +54,13 @@ async def edit_order(callback: CallbackQuery, state: FSMContext, bot: Bot):
     current_date = datetime.now()
     for order_item in list_orders:
         order_data = datetime.strptime(order_item.date_create, '%d.%m.%Y %H:%M')
-        if order_data + timedelta(days=2) <= current_date:
+        if order_data + timedelta(days=2) >= current_date:
             list_orders_filters.append(order_item)
     list_orders = list_orders_filters
     if list_orders:
         page = 0
         text_message = f'Выберите заказ для редактирования\n\n' \
+                       f'Заказ № {list_orders[page].id}\n' \
                        f'Плательщик: <i>{list_orders[page].payer}</i>\n' \
                        f'ИНН: <i>{list_orders[page].inn}</i>\n' \
                        f'Адрес: <i>{list_orders[page].address}</i>\n' \
@@ -102,7 +103,7 @@ async def process_ordereditlist_pagination(callback: CallbackQuery, state: FSMCo
     current_date = datetime.now()
     for order_item in list_orders:
         order_data = datetime.strptime(order_item.date_create, '%d.%m.%Y %H:%M')
-        if order_data + timedelta(days=2) <= current_date:
+        if order_data + timedelta(days=2) >= current_date:
             list_orders_filters.append(order_item)
     list_orders = list_orders_filters
     max_page = len(list_orders)
@@ -116,6 +117,7 @@ async def process_ordereditlist_pagination(callback: CallbackQuery, state: FSMCo
         page = 0
     if list_orders:
         text_message = f'Выберите заказ для редактирования\n\n' \
+                       f'Заказ № {list_orders[page].id}\n' \
                        f'Плательщик: <i>{list_orders[page].payer}</i>\n' \
                        f'ИНН: <i>{list_orders[page].inn}</i>\n' \
                        f'Адрес: <i>{list_orders[page].address}</i>\n' \
@@ -152,7 +154,8 @@ async def process_edittorder(callback: CallbackQuery, state: FSMContext, bot: Bo
     await state.update_data(order_id=order_id)
     info_order = await rq.get_order_id(order_id=order_id)
     if info_order.status != rq.OrderStatus.work:
-        await callback.message.edit_text(text=f"Плательщик: <i>"
+        await callback.message.edit_text(text=f"Заказ № {info_order.id}\n"
+                                              f"Плательщик: <i>"
                                               f"{data['payer_order'] if data.get('payer_order') else info_order.payer}"
                                               f"</i>\n"
                                               f"ИНН: <i>"
@@ -181,7 +184,8 @@ async def main_change(state: FSMContext, message: Message):
     data = await state.get_data()
     info_order: Order = await rq.get_order_id(order_id=data['order_id'])
     try:
-        await message.edit_text(text=f"Плательщик: <i>"
+        await message.edit_text(text=f"Заказ № {info_order.id}\n"
+                                     f"Плательщик: <i>"
                                      f"{data['payer_order'] if data.get('payer_order') else info_order.payer}"
                                      f"</i>\n"
                                      f"ИНН: <i>"
@@ -203,7 +207,8 @@ async def main_change(state: FSMContext, message: Message):
                                      f" литров</i>\n",
                                 reply_markup=keyboard_action_repiet())
     except:
-        await message.answer(text=f"Плательщик: <i>"
+        await message.answer(text=f"Заказ № {info_order.id}\n"
+                                  f"Плательщик: <i>"
                                   f"{data['payer_order'] if data.get('payer_order') else info_order.payer}"
                                   f"</i>\n"
                                   f"ИНН: <i>"
