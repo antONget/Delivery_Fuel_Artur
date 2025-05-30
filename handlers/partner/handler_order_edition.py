@@ -140,13 +140,13 @@ async def process_ordereditlist_pagination(callback: CallbackQuery, state: FSMCo
 @error_handler
 async def process_edittorder(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
     """
-    Процес выбора полей заказа для редактирования
+    Процесс выбора полей заказа для редактирования
     :param callback:
     :param state:
     :param bot:
     :return:
     """
-    logging.info(f'process_edittorder: {callback.from_user.id} {callback.data}')
+    logging.info(f'Выбор поля для редактирования заказа: {callback.from_user.id} {callback.data}')
     order_id = int(callback.data.split('_')[-1])
     logging.info(f'{order_id}')
     data = await state.get_data()
@@ -619,7 +619,7 @@ async def edit_order_date(callback: CallbackQuery, state: FSMContext, bot: Bot):
     :param bot:
     :return:
     """
-    logging.info('edit_order_date')
+    logging.info(f'Обновление полей заказа - ДАТА: {callback.data} {callback.from_user.id}')
     calendar = aiogram_calendar.SimpleCalendar(show_alerts=True)
     calendar.set_dates_range(datetime(2015, 1, 1), datetime(2050, 12, 31))
     # получаем текущую дату
@@ -727,17 +727,18 @@ async def get_time_state(message: Message, state: FSMContext, bot: Bot) -> None:
 @error_handler
 async def orderedit_confirm(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
     """
-    Пагинация по списку заказов
+    Подтверждение новых полей заказа
     :param callback:
     :param state:
     :param bot:
     :return:
     """
-    logging.info(f'orderedit_confirm: {callback.from_user.id}')
+    logging.info(f'Подтверждение новых полей заказа: {callback.from_user.id}')
     await callback.message.delete()
     data = await state.get_data()
     order_id = data['order_id']
-    logging.info(f'{order_id}')
+    # ВЫВОДИМ ИНФОРМАЦИЮ О ЗАКАЗЕ
+    logging.info(f'Номер заказа: {order_id}')
     info_order = await rq.get_order_id(order_id=order_id)
     payer = data.get('payer_order', info_order.payer)
     await rq.set_order_payer(order_id=order_id, payer=payer)
@@ -756,6 +757,7 @@ async def orderedit_confirm(callback: CallbackQuery, state: FSMContext, bot: Bot
     list_admins: list[User] = await rq.get_users_role(role=rq.UserRole.admin)
     admins_tg_id: list[int] = [admin.tg_id for admin in list_admins]
     await state.update_data(order_id=order_id)
+    # если есть водители то формируем клавиатуру для их назначения на заказ
     list_users: list[User] = await rq.get_users_role(role=rq.UserRole.executor)
     if not list_users:
         await callback.message.answer(text=f'Нет ВОДИТЕЛЕЙ для назначения их на заказ. Добавьте водителей.')
@@ -767,31 +769,11 @@ async def orderedit_confirm(callback: CallbackQuery, state: FSMContext, bot: Bot
                                                forward=2,
                                                count=6,
                                                order_id=order_id)
-    # if callback.from_user.id in admins_tg_id:
-    #     await callback.message.answer(text=f"Плательщик: <i>"
-    #                                        f"{data['payer_order'] if data.get('payer_order') else info_order.payer}"
-    #                                        f"</i>\n"
-    #                                        f"ИНН: <i>"
-    #                                        f"{data['inn_order'] if data.get('inn_order') else info_order.inn}"
-    #                                        f"</i>\n"
-    #                                        f"Адрес: <i>"
-    #                                        f"{data['address_order'] if data.get('address_order') else info_order.address}"
-    #                                        f"</i>\n"
-    #                                        f"Контактное лицо: <i>"
-    #                                        f"{data['contact_order'] if data.get('contact_order') else info_order.contact}</i>\n"
-    #                                        f"Дата доставки: <i>"
-    #                                        f"{data['date_order'] if data.get('date_order') else info_order.date}"
-    #                                        f"</i>\n"
-    #                                        f"Время доставки: <i>"
-    #                                        f"{data['time_order'] if data.get('time_order') else info_order.time}"
-    #                                        f"</i>\n"
-    #                                        f"Количество топлива: <i>"
-    #                                        f"{data['volume_order'] if data.get('volume_order') else info_order.volume}"
-    #                                        f" литров</i>\n",
-    #                                   reply_markup=keyboard)
-    # else:
+    # список пользователей с ролью ADMIN
     admins: list[User] = await rq.get_users_role(role=rq.UserRole.admin)
+    # список tg_id администраторов проекта
     admins_ids = [admin.tg_id for admin in admins]
+    # если заказ изменил не администратор
     if callback.from_user.id not in admins_ids:
         msg_partner = await callback.message.answer(text=f"Заказ № {order_id} успешно изменен\n\n"
                                                          f"Плательщик: <i>"
@@ -818,7 +800,9 @@ async def orderedit_confirm(callback: CallbackQuery, state: FSMContext, bot: Bot
                                                     reply_markup=keyboard_delete_partner(order_id=order_id))
         await rq.update_order_partner_delete(order_id=order_id,
                                              message_id=msg_partner.message_id)
+    # получаем список номеров сообщений с заказом для администратора
     message_admin: list[OrderAdminEdit] = await rq.get_order_admin_edit(order_id=order_id)
+    # формируем текст сообщения с информацией о заказе
     text_admin_message = f"Заказ № {order_id} отредактирован партнером" \
                          f" <a href='tg://user?id={callback.from_user.id}'>" \
                          f"{callback.from_user.username}</a>\n\n" \
@@ -844,15 +828,16 @@ async def orderedit_confirm(callback: CallbackQuery, state: FSMContext, bot: Bot
                          f" литров</i>\n" \
                          f"Выберите ВОДИТЕЛЯ, для назначения на заказ № {order_id}"
     # производим рассылку заказа администраторам и в группу
+    keyboard_ = keyboard
     for item in message_admin:
         try:
             if item.chat_id == -1002691975634:
-                keyboard = None
+                keyboard_ = None
                 text_admin_message = '\n'.join(text_admin_message.split('\n')[:-1])
             msg_admin = await bot.edit_message_text(chat_id=item.chat_id,
                                                     message_id=item.message_id,
                                                     text=text_admin_message,
-                                                    reply_markup=keyboard)
+                                                    reply_markup=keyboard_)
             await rq.update_order_admin_edit(order_id=order_id, message_id=msg_admin.message_id, chat_id=item.chat_id)
             # await rq.add_order_admin_edit(data={"order_id": order_id, "chat_id": item.chat_id, "message_id": msg_admin.message_id})
         except:

@@ -117,13 +117,18 @@ async def select_type_order(callback: CallbackQuery, state: FSMContext, bot: Bot
     :return:
     """
     logging.info(f'select_type_order:{callback.data} - {callback.from_user.id}')
+    # получаем тип действия над заказом
     type_select = callback.data.split('_')[1]
     data = await state.get_data()
+    # статус заказа
     type_order = data['type_order']
-
+    # если заказ выбран или отменен водителем
     if type_select in ['select', 'cancel']:
+        # получаем номер заказа, над которым происходит действие
         order_id: int = int(callback.data.split('_')[-1])
+        # информация о заказе
         info_order: Order = await rq.get_order_id(order_id=order_id)
+        # если заказ имеет статус отменен
         if info_order.status == rq.OrderStatus.cancel:
             await callback.message.edit_text(text=f'Заказ №{info_order.id} отменен')
             return
@@ -135,9 +140,9 @@ async def select_type_order(callback: CallbackQuery, state: FSMContext, bot: Bot
             await state.set_state(StateReport.text_report)
             await callback.answer()
             return
-
+        # если выбрано действие отменить заказ, и заказ находится в работе
         elif type_select == 'cancel' and type_order == 'work':
-            # order_id: str = callback.data.split('_')[-1]
+            # обновляем данные о id заказа
             await state.update_data(order_id=order_id)
             await callback.message.edit_text(text=f'Вы отказались от выполнения заказа №{order_id},'
                                                   f' укажите причину или нажмите "ПРОПУСТИТЬ"',
@@ -368,7 +373,7 @@ async def send_report(callback: CallbackQuery, state: FSMContext, bot: Bot) -> N
 @error_handler
 async def get_comment_cancel(message: Message, state: FSMContext, bot: Bot) -> None:
     """
-    Изменение данных
+    Получение комментария от водителя о причинах им отказа от заказа
     :param message:
     :param state:
     :param bot:
@@ -379,6 +384,7 @@ async def get_comment_cancel(message: Message, state: FSMContext, bot: Bot) -> N
     await message.answer(text='Данные от вас получены и переданы администраторам')
     data = await state.get_data()
     order_id = data['order_id']
+    # устанавливаем статус заказа ОТМЕНА
     await rq.set_order_status(order_id=order_id, status=rq.OrderStatus.cancel)
     info_order: Order = await rq.get_order_id(order_id=order_id)
     info_user: User = await rq.get_user_by_id(tg_id=info_order.tg_id)
@@ -465,7 +471,7 @@ async def pass_comment(callback: CallbackQuery, state: FSMContext, bot: Bot) -> 
 @error_handler
 async def cancel_change_receipt(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
     """
-    Пропуск добавления комментария
+    Отмена обновления отправленной квитанции
     :param callback:
     :param state:
     :param bot:
