@@ -45,7 +45,7 @@ async def edit_order(callback: CallbackQuery, state: FSMContext, bot: Bot):
     :param bot:
     :return:
     """
-    logging.info(f'edit_order: {callback.from_user.id}')
+    logging.info(f'Запуск процесса редактирования созданного, но не обработанного заказа: {callback.from_user.id}')
     tg_id = callback.from_user.id
     if await check_role(tg_id=callback.from_user.id, role=rq.UserRole.admin):
         tg_id = None
@@ -148,7 +148,7 @@ async def process_edittorder(callback: CallbackQuery, state: FSMContext, bot: Bo
     """
     logging.info(f'Выбор поля для редактирования заказа: {callback.from_user.id} {callback.data}')
     order_id = int(callback.data.split('_')[-1])
-    logging.info(f'{order_id}')
+    logging.info(f'Номер заказа: {order_id}')
     data = await state.get_data()
     await state.clear()
     await state.update_data(order_id=order_id)
@@ -733,7 +733,7 @@ async def orderedit_confirm(callback: CallbackQuery, state: FSMContext, bot: Bot
     :param bot:
     :return:
     """
-    logging.info(f'Подтверждение новых полей заказа: {callback.from_user.id}')
+    logging.info(f'Подтверждение новых полей заказа: {callback.data} {callback.from_user.id}')
     await callback.message.delete()
     data = await state.get_data()
     order_id = data['order_id']
@@ -748,7 +748,7 @@ async def orderedit_confirm(callback: CallbackQuery, state: FSMContext, bot: Bot
     await rq.set_order_address(order_id=order_id, address=address)
     contact = data.get('contact_order', info_order.contact)
     await rq.set_order_contact(order_id=order_id, contact=contact)
-    date_order = data.get('date_order', info_order.contact)
+    date_order = data.get('date_order', info_order.date)
     await rq.set_order_date(order_id=order_id, date_order=date_order)
     time_order = data.get('time_order', info_order.time)
     await rq.set_order_time(order_id=order_id, time_order=time_order)

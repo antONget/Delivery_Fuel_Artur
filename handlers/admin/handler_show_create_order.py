@@ -6,7 +6,7 @@ from aiogram.fsm.state import State, StatesGroup
 import aiogram_calendar
 from aiogram.filters.callback_data import CallbackData
 
-from keyboards.admin.keyboard_show_create_order import keyboards_executor_personal
+# from keyboards.admin.keyboard_show_create_order import keyboards_executor_personal
 from keyboards.partner.keyboard_order import keyboards_executor_personal
 import database.requests as rq
 from database.models import User, Order
@@ -25,15 +25,15 @@ router = Router()
 
 
 @router.message(F.text == 'Необработанные заявки', IsRoleAdmin())
-async def create_order_show(message: Message, state: FSMContext, bot: Bot):
+async def process_unprocessed_order(message: Message, state: FSMContext, bot: Bot):
     """
-    просмотр созданных заказов
+    Просмотр созданных и необработанных заказов
     :param message:
     :param state:
     :param bot:
     :return:
     """
-    logging.info('create_order_show')
+    logging.info(f'Просмотр созданных и необработанных заказов: {message.from_user.id}')
     tg_id = message.from_user.id
     if await check_role(tg_id=message.from_user.id, role=rq.UserRole.admin):
         tg_id = None
@@ -68,13 +68,13 @@ async def create_order_show(message: Message, state: FSMContext, bot: Bot):
 @error_handler
 async def process_ordershowlist_pagination(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
     """
-    Пагинация по списку заказов
+    Пагинация по списку необработанных заказов
     :param callback: {callback_prefix_back}_{page}, {callback_prefix_next}_{page}
     :param state:
     :param bot:
     :return:
     """
-    logging.info(f'process_ordershowlist_pagination: {callback.from_user.id}')
+    logging.info(f'Пагинация по списку необработанных заказов: {callback.data} {callback.from_user.id}')
     page: int = int(callback.data.split('_')[-1])
     action: str = callback.data.split('_')[-2]
     tg_id = callback.from_user.id
@@ -116,13 +116,13 @@ async def process_ordershowlist_pagination(callback: CallbackQuery, state: FSMCo
 @error_handler
 async def process_ordershowlist_select(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
     """
-    Выбор заказа
+    Выбор необработанного заказа
     :param callback: {callback_prefix_select}_{item_id}
     :param state:
     :param bot:
     :return:
     """
-    logging.info(f'process_ordershowlist_select: {callback.from_user.id}')
+    logging.info(f'Выбор необработанного заказа: {callback.data} {callback.from_user.id}')
     list_users: list[User] = await rq.get_users_role(role=rq.UserRole.executor)
     if not list_users:
         await callback.message.answer(text=f'Нет ВОДИТЕЛЕЙ для назначения их на заказ. Добавьте водителей.')

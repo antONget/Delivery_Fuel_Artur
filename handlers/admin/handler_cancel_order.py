@@ -33,7 +33,7 @@ async def process_cancel_order(callback: CallbackQuery, state: FSMContext, bot: 
     :param bot:
     :return:
     """
-    logging.info(f'process_cancel_order: {callback.from_user.id}')
+    logging.info(f'Отмена полученного заказа: {callback.data} {callback.from_user.id}')
     order_id = int(callback.data.split('_')[-1])
     await state.update_data(order_id=order_id)
     await callback.message.edit_text(text=f'Пришлите причину отмены заказа')
