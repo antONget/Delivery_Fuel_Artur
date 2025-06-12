@@ -279,22 +279,38 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
         tg_id_executor = data['tg_id_executor']
         user_info = await rq.get_user_by_id(tg_id=tg_id_executor)
         order_info: Order = await rq.get_order_id(order_id=order_id)
+        partner_info: User = await rq.get_user_by_id(tg_id=order_info.tg_id)
         if not order_info:
             await callback.message.delete()
             await callback.message.answer(text='Заказ удален')
             return
         # обновляем сообщение у администратора назначившего водителя
-        await callback.message.edit_text(text=f'Заказ № {order_id} создан.\n\n'
-                                              f'Плательщик: <i>{order_info.payer}</i>\n'
-                                              f'ИНН: <i>{order_info.inn}</i>\n'
-                                              f'Адрес: <i>{order_info.address}</i>\n'
-                                              f'Контактное лицо: <i>{order_info.contact}</i>\n'
-                                              f'Дата доставки: <i>{order_info.date}</i>\n'
-                                              f'Время доставки: <i>{order_info.time}</i>\n'
-                                              f'Количество топлива: <i>{order_info.volume} литров</i>\n'
-                                              f'Водитель <a href="tg://user?id={user_info.tg_id}">'
-                                              f'{user_info.username}</a>',
-                                         reply_markup=None)
+        try:
+            await callback.message.edit_text(text=f'Заказ № {order_id} создан партнером <a href="tg://user?id={partner_info.tg_id}">'
+                                                  f'{partner_info.username}</a>.\n\n'
+                                                  f'Плательщик: <i>{order_info.payer}</i>\n'
+                                                  f'ИНН: <i>{order_info.inn}</i>\n'
+                                                  f'Адрес: <i>{order_info.address}</i>\n'
+                                                  f'Контактное лицо: <i>{order_info.contact}</i>\n'
+                                                  f'Дата доставки: <i>{order_info.date}</i>\n'
+                                                  f'Время доставки: <i>{order_info.time}</i>\n'
+                                                  f'Количество топлива: <i>{order_info.volume} литров</i>\n'
+                                                  f'Водитель <a href="tg://user?id={user_info.tg_id}">'
+                                                  f'{user_info.username}</a>',
+                                             reply_markup=None)
+        except:
+            await callback.message.edit_text(text=f'Заказ № {order_id} создан партнером <a href="tg://user?id={partner_info.tg_id}">'
+                                                  f'{partner_info.username}</a>.\n\n'
+                                                  f'Плательщик: <i>{order_info.payer}</i>\n'
+                                                  f'ИНН: <i>{order_info.inn}</i>\n'
+                                                  f'Адрес: <i>{order_info.address}</i>\n'
+                                                  f'Контактное лицо: <i>{order_info.contact}</i>\n'
+                                                  f'Дата доставки: <i>{order_info.date}</i>\n'
+                                                  f'Время доставки: <i>{order_info.time}</i>\n'
+                                                  f'Количество топлива: <i>{order_info.volume} литров</i>\n'
+                                                  f'Водитель <a href="tg://user?id={user_info.tg_id}">'
+                                                  f'{user_info.username}</a>.',
+                                             reply_markup=None)
         try:
             msg_partner: OrderPartnerDelete = await rq.get_order_partner_delete(order_id=order_id)
             msgs_admin: list[OrderAdminEdit] = await rq.get_order_admin_edit(order_id=order_id)
@@ -303,7 +319,8 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
                 # print(msg_group[0].message_id)
                 await bot.edit_message_text(chat_id=-1002691975634,
                                             message_id=msg_group[0].message_id,
-                                            text=f'Заказ № {order_id}.\n\n'
+                                            text=f'Заказ № {order_id} создан партнером <a href="tg://user?id={partner_info.tg_id}">'
+                                                 f'{partner_info.username}</a>.\n\n'
                                                  f'Плательщик: <i>{order_info.payer}</i>\n'
                                                  f'ИНН: <i>{order_info.inn}</i>\n'
                                                  f'Адрес: <i>{order_info.address}</i>\n'
@@ -318,7 +335,8 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
             try:
                 msg_partner = await bot.edit_message_text(chat_id=order_info.tg_id,
                                                           message_id=msg_partner.message_id,
-                                                          text=f'Заказ № {order_id}.\n\n'
+                                                          text=f'Заказ № {order_id} создан партнером <a href="tg://user?id={partner_info.tg_id}">'
+                                                               f'{partner_info.username}</a>.\n\n'
                                                                f'Плательщик: <i>{order_info.payer}</i>\n'
                                                                f'ИНН: <i>{order_info.inn}</i>\n'
                                                                f'Адрес: <i>{order_info.address}</i>\n'
@@ -333,7 +351,8 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
                                                      message_id=msg_partner.message_id)
             except:
                 msg_partner = await bot.send_message(chat_id=order_info.tg_id,
-                                                     text=f'Заказ № {order_id}.\n\n'
+                                                     text=f'Заказ № {order_id} создан партнером <a href="tg://user?id={partner_info.tg_id}">'
+                                                          f'{partner_info.username}</a>.\n\n'
                                                           f'Плательщик: <i>{order_info.payer}</i>\n'
                                                           f'ИНН: <i>{order_info.inn}</i>\n'
                                                           f'Адрес: <i>{order_info.address}</i>\n'
