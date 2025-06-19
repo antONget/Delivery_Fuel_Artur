@@ -18,7 +18,7 @@ from utils.utils_keyboard import utils_handler_pagination_to_composite_text
 from filter.user_filter import check_role
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 config: Config = load_config()
 router = Router()
@@ -39,6 +39,13 @@ async def process_unprocessed_order(message: Message, state: FSMContext, bot: Bo
         tg_id = None
     list_orders: list[Order] = await rq.get_orders_tg_id_creator_status_(tg_id_creator=tg_id,
                                                                          status=rq.OrderStatus.create)
+    format_ = '%d.%m.%Y %H:%M'
+    current_date = datetime.now().strftime(format_)
+    filter_order = []
+    for order in list_orders:
+        if datetime.strptime(current_date, format_) - (datetime.strptime(order.date_create, format_) + timedelta(days=3)):
+            filter_order.append(order)
+    list_orders = filter_order
     if list_orders:
         page = 0
         text_message = f'Выберите заказ\n\n' \
@@ -82,6 +89,14 @@ async def process_ordershowlist_pagination(callback: CallbackQuery, state: FSMCo
         tg_id = None
     list_orders: list[Order] = await rq.get_orders_tg_id_creator_status_(tg_id_creator=tg_id,
                                                                          status=rq.OrderStatus.create)
+    format_ = '%d.%m.%Y %H:%M'
+    current_date = datetime.now().strftime(format_)
+    filter_order = []
+    for order in list_orders:
+        if datetime.strptime(current_date, format_) - (
+                datetime.strptime(order.date_create, format_) + timedelta(days=3)):
+            filter_order.append(order)
+    list_orders = filter_order
     max_page = len(list_orders)
     if action == 'next':
         page += 1
