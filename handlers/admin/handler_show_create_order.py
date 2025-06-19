@@ -43,7 +43,7 @@ async def process_unprocessed_order(message: Message, state: FSMContext, bot: Bo
     current_date = datetime.now().strftime(format_)
     filter_order = []
     for order in list_orders:
-        if datetime.strptime(current_date, format_) - (datetime.strptime(order.date_create, format_) + timedelta(days=3)):
+        if not datetime.strptime(current_date, format_) - (datetime.strptime(order.date_create, format_) + timedelta(days=3)):
             filter_order.append(order)
     list_orders = filter_order
     if list_orders:
@@ -93,7 +93,7 @@ async def process_ordershowlist_pagination(callback: CallbackQuery, state: FSMCo
     current_date = datetime.now().strftime(format_)
     filter_order = []
     for order in list_orders:
-        if datetime.strptime(current_date, format_) - (
+        if not datetime.strptime(current_date, format_) - (
                 datetime.strptime(order.date_create, format_) + timedelta(days=3)):
             filter_order.append(order)
     list_orders = filter_order
