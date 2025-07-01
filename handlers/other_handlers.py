@@ -39,7 +39,7 @@ async def order(message: Message) -> None:
 
 @router.message()
 async def all_message(message: Message) -> None:
-    logging.info(f'all_message {message.text}')
+    logging.info(f'all_message {message.text} {message.from_user.id}')
     if message.video:
         logging.info(f'all_message message.photo')
         logging.info(message.video.file_id)

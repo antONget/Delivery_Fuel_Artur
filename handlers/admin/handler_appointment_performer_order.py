@@ -333,39 +333,53 @@ async def process_confirm_appoint(callback: CallbackQuery, state: FSMContext, bo
             except:
                 pass
             try:
-                msg_partner = await bot.edit_message_text(chat_id=order_info.tg_id,
-                                                          message_id=msg_partner.message_id,
-                                                          text=f'Заказ № {order_id} создан партнером <a href="tg://user?id={partner_info.tg_id}">'
-                                                               f'{partner_info.username}</a>.\n\n'
-                                                               f'Плательщик: <i>{order_info.payer}</i>\n'
-                                                               f'ИНН: <i>{order_info.inn}</i>\n'
-                                                               f'Адрес: <i>{order_info.address}</i>\n'
-                                                               f'Контактное лицо: <i>{order_info.contact}</i>\n'
-                                                               f'Дата доставки: <i>{order_info.date}</i>\n'
-                                                               f'Время доставки: <i>{order_info.time}</i>\n'
-                                                               f'Количество топлива: <i>{order_info.volume} литров</i>\n'
-                                                               f'Назначен водитель <a href="tg://user?id={user_info.tg_id}">'
-                                                               f'{user_info.username}</a>',
-                                                          reply_markup=kb.keyboard_delete_message_partner(order_id=order_id))
+                await bot.send_message(chat_id=order_info.tg_id,
+                                       text=f'На заказ №{order_id} назначен водитель'
+                                            f' <a href="tg://user?id={user_info.tg_id}">'
+                                            f'{user_info.username}</a>')
+                msg_partner_ = await bot.edit_message_text(chat_id=order_info.tg_id,
+                                                           message_id=msg_partner.message_id,
+                                                           text=f'Заказ № {order_id} создан партнером'
+                                                                f' <a href="tg://user?id={partner_info.tg_id}">'
+                                                                f'{partner_info.username}</a>.\n\n'
+                                                                f'Плательщик: <i>{order_info.payer}</i>\n'
+                                                                f'ИНН: <i>{order_info.inn}</i>\n'
+                                                                f'Адрес: <i>{order_info.address}</i>\n'
+                                                                f'Контактное лицо: <i>{order_info.contact}</i>\n'
+                                                                f'Дата доставки: <i>{order_info.date}</i>\n'
+                                                                f'Время доставки: <i>{order_info.time}</i>\n'
+                                                                f'Количество топлива:'
+                                                                f' <i>{order_info.volume} литров</i>\n'
+                                                                f'Назначен водитель'
+                                                                f' <a href="tg://user?id={user_info.tg_id}">'
+                                                                f'{user_info.username}</a>',
+                                                           reply_markup=kb.keyboard_delete_message_partner(
+                                                               order_id=order_id))
                 await rq.update_order_partner_delete(order_id=order_id,
-                                                     message_id=msg_partner.message_id)
+                                                     message_id=msg_partner_.message_id)
             except:
-                msg_partner = await bot.send_message(chat_id=order_info.tg_id,
-                                                     text=f'Заказ № {order_id} создан партнером <a href="tg://user?id={partner_info.tg_id}">'
-                                                          f'{partner_info.username}</a>.\n\n'
-                                                          f'Плательщик: <i>{order_info.payer}</i>\n'
-                                                          f'ИНН: <i>{order_info.inn}</i>\n'
-                                                          f'Адрес: <i>{order_info.address}</i>\n'
-                                                          f'Контактное лицо: <i>{order_info.contact}</i>\n'
-                                                          f'Дата доставки: <i>{order_info.date}</i>\n'
-                                                          f'Время доставки: <i>{order_info.time}</i>\n'
-                                                          f'Количество топлива: <i>{order_info.volume} литров</i>\n'
-                                                          f'Назначен водитель <a href="tg://user?id={user_info.tg_id}">'
-                                                          f'{user_info.username}</a>',
-                                                     reply_markup=kb.keyboard_delete_message_partner(
+                await bot.send_message(chat_id=order_info.tg_id,
+                                       text=f'На заказ №{order_id} назначен водитель'
+                                            f' <a href="tg://user?id={user_info.tg_id}">'
+                                            f'{user_info.username}</a>')
+                msg_partner_ = await bot.send_message(chat_id=order_info.tg_id,
+                                                      text=f'Заказ № {order_id} создан партнером'
+                                                           f' <a href="tg://user?id={partner_info.tg_id}">'
+                                                           f'{partner_info.username}</a>.\n\n'
+                                                           f'Плательщик: <i>{order_info.payer}</i>\n'
+                                                           f'ИНН: <i>{order_info.inn}</i>\n'
+                                                           f'Адрес: <i>{order_info.address}</i>\n'
+                                                           f'Контактное лицо: <i>{order_info.contact}</i>\n'
+                                                           f'Дата доставки: <i>{order_info.date}</i>\n'
+                                                           f'Время доставки: <i>{order_info.time}</i>\n'
+                                                           f'Количество топлива: <i>{order_info.volume} литров</i>\n'
+                                                           f'Назначен водитель'
+                                                           f' <a href="tg://user?id={user_info.tg_id}">'
+                                                           f'{user_info.username}</a>',
+                                                      reply_markup=kb.keyboard_delete_message_partner(
                                                          order_id=order_id))
                 await rq.update_order_partner_delete(order_id=order_id,
-                                                     message_id=msg_partner.message_id)
+                                                     message_id=msg_partner_.message_id)
         except:
             await callback.message.answer(text='Партнер не оповещен о назначении водителя на его заказ,'
                                                ' возможно он заблокировал бота')
