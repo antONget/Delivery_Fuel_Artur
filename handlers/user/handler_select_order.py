@@ -7,8 +7,6 @@ from filter.user_filter import IsRoleExecutor, IsRoleAdmin
 from keyboards.user import keyboard_select_order as kb
 from keyboards.partner.keyboard_order import keyboards_executor_personal
 from utils.error_handling import error_handler
-from utils.send_admins import send_message_admins_text, send_message_admins_media_group, \
-    send_message_admins_media_group_save_message
 
 from datetime import datetime
 from database import requests as rq
@@ -34,7 +32,7 @@ class StateReport(StatesGroup):
 @error_handler
 async def process_buttons_order(message: Message, state: FSMContext):
     """
-    Отслеживание выполнения заявки
+    Выбор типа заказа: В работе, Завершенные
     :param message:
     :param state:
     :return:
@@ -50,7 +48,7 @@ async def process_buttons_order(message: Message, state: FSMContext):
 @error_handler
 async def select_type_order(callback: CallbackQuery, state: FSMContext, bot: Bot):
     """
-    Получаем тип заявки
+    Получаем тип заказа
     :param callback:
     :param state:
     :param bot:
@@ -384,8 +382,10 @@ async def get_comment_cancel(message: Message, state: FSMContext, bot: Bot) -> N
     await message.answer(text='Данные от вас получены и переданы администраторам')
     data = await state.get_data()
     order_id = data['order_id']
-    # устанавливаем статус заказа ОТМЕНА
-    await rq.set_order_status(order_id=order_id, status=rq.OrderStatus.cancel)
+    # устанавливаем статус заказ - СОЗДАН
+    await rq.set_order_status(order_id=order_id, status=rq.OrderStatus.create)
+    # удаляем водителя из заказа
+    await rq.set_order_executor(order_id=order_id, executor=0)
     info_order: Order = await rq.get_order_id(order_id=order_id)
     info_user: User = await rq.get_user_by_id(tg_id=info_order.tg_id)
     list_users: list[User] = await rq.get_users_role(role=rq.UserRole.executor)
@@ -432,7 +432,10 @@ async def pass_comment(callback: CallbackQuery, state: FSMContext, bot: Bot) -> 
     await callback.message.edit_text(text='Данные от вас получены и переданы')
     data = await state.get_data()
     order_id = data['order_id']
-    await rq.set_order_status(order_id=order_id, status=rq.OrderStatus.cancel)
+    # устанавливаем статус заказ - СОЗДАН
+    await rq.set_order_status(order_id=order_id, status=rq.OrderStatus.create)
+    # удаляем водителя из заказа
+    await rq.set_order_executor(order_id=order_id, executor=0)
     info_order: Order = await rq.get_order_id(order_id=order_id)
     info_user: User = await rq.get_user_by_id(tg_id=info_order.tg_id)
     list_users: list[User] = await rq.get_users_role(role=rq.UserRole.executor)
